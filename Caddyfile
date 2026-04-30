@@ -1,8 +1,8 @@
-www.tgrb.service.ru {
-    redir https://tgrb.service.ru{uri} permanent
+www.tgrbservice.ru {
+    redir https://tgrbservice.ru{uri} permanent
 }
 
-tgrb.service.ru {
+tgrbservice.ru {
 	root * /srv/html
 	file_server
 	encode gzip
