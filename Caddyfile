@@ -1,0 +1,10 @@
+www.tgrb.service.ru, tgrb.service.ru {
+	root * /srv/html
+	file_server
+	encode gzip
+
+	log {
+		output stdout
+		format console
+	}
+}
