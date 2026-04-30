@@ -5,18 +5,39 @@
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 	<title>tgrb.service.ru — работает</title>
 	<style>
-		body { font-family: system-ui, sans-serif; display: grid; place-items: center; min-height: 100vh; margin: 0; background: #0f172a; color: #e2e8f0; }
-		.card { padding: 2.5rem 3rem; background: #1e293b; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,.4); text-align: center; }
+		body {
+			font-family: system-ui, sans-serif;
+			display: grid;
+			place-items: center;
+			min-height: 100vh;
+			margin: 0;
+			color: #e2e8f0;
+			background:
+				linear-gradient(rgba(15, 23, 42, .65), rgba(15, 23, 42, .85)),
+				url('bg.jpg') center / cover no-repeat fixed,
+				#0f172a;
+		}
+		.card {
+			padding: 2.5rem 3rem;
+			background: rgba(30, 41, 59, .55);
+			border: 1px solid rgba(148, 163, 184, .15);
+			border-radius: 12px;
+			box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
+			text-align: center;
+			backdrop-filter: blur(14px) saturate(140%);
+			-webkit-backdrop-filter: blur(14px) saturate(140%);
+		}
 		h1 { margin: 0 0 .5rem; font-size: 1.75rem; }
-		p { margin: .25rem 0; color: #94a3b8; }
+		p { margin: .25rem 0; color: #cbd5e1; }
 		.ok { color: #4ade80; font-weight: 600; }
+		a { color: inherit; }
 	</style>
 </head>
 <body>
 	<div class="card">
-		<h1>tgrb.service.ru</h1>
-		<p class="ok">HTTPS работает</p>
-		<p>Caddy + Docker Compose</p>
+		<h1>www.tgrbservice.ru</h1>
+		<p class="ok">Synchronisica</p>
+		<p>https://t.me/Synchronisica</p>
 	</div>
 </body>
 </html>
