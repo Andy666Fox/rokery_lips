@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<title>tgrb.service.ru — работает</title>
+	<title>Synchronisica</title>
 	<style>
 		body {
 			font-family: system-ui, sans-serif;
@@ -12,17 +12,35 @@
 			min-height: 100vh;
 			margin: 0;
 			color: #e2e8f0;
-			background:
-				linear-gradient(rgba(15, 23, 42, .65), rgba(15, 23, 42, .85)),
-				url('bg.jpg') center / cover no-repeat fixed,
-				#0f172a;
+			background: #0f172a;
+		}
+		.stage {
+			position: relative;
+			display: inline-block;
+			line-height: 0;
+			border-radius: 18px;
+			overflow: hidden;
+			box-shadow: 0 20px 60px rgba(0, 0, 0, .55);
+		}
+		.stage img {
+			display: block;
+			max-width: min(92vw, 1200px);
+			max-height: 88vh;
+			width: auto;
+			height: auto;
+		}
+		.stage .card {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			line-height: normal;
 		}
 		.card {
 			padding: 2.5rem 3rem;
 			background: rgba(30, 41, 59, .55);
-			border: 1px solid rgba(148, 163, 184, .15);
+			border: 1px solid rgba(148, 163, 184, .18);
 			border-radius: 12px;
-			box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
 			text-align: center;
 			backdrop-filter: blur(14px) saturate(140%);
 			-webkit-backdrop-filter: blur(14px) saturate(140%);
@@ -34,10 +52,13 @@
 	</style>
 </head>
 <body>
-	<div class="card">
-		<h1>Synchronisica</h1>
-		<p class="ok"><a>https://t.me/Synchronisica</a></p>
-		<p>www.tgrbservice.ru</p>
+	<div class="stage">
+		<img src="bg.jpg" alt="">
+		<div class="card">
+			<h1>Synchronisica</h1>
+			<p class="ok"><a href="https://t.me/Synchronisica" target="_blank" rel="noopener">https://t.me/Synchronisica</a></p>
+			<p>www.tgrbservice.ru</p>
+		</div>
 	</div>
 </body>
 </html>
