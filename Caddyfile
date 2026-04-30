@@ -1,7 +1,17 @@
-www.tgrb.service.ru, tgrb.service.ru {
+www.tgrb.service.ru {
+    redir https://tgrb.service.ru{uri} permanent
+}
+
+tgrb.service.ru {
 	root * /srv/html
 	file_server
 	encode gzip
+
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
 
 	log {
 		output stdout
