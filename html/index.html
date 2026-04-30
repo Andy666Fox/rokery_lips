@@ -4,9 +4,14 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 	<title>Synchronisica</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 	<style>
 		body {
-			font-family: system-ui, sans-serif;
+			font-family: 'Inter', system-ui, -apple-system, sans-serif;
+			-webkit-font-smoothing: antialiased;
+			-moz-osx-font-smoothing: grayscale;
 			display: grid;
 			place-items: center;
 			min-height: 100vh;
@@ -45,10 +50,46 @@
 			backdrop-filter: blur(14px) saturate(140%);
 			-webkit-backdrop-filter: blur(14px) saturate(140%);
 		}
-		h1 { margin: 0 0 .5rem; font-size: 1.75rem; }
-		p { margin: .25rem 0; color: #cbd5e1; }
-		.ok { color: #4ade80; font-weight: 600; }
-		a { color: inherit; }
+		h1 {
+			font-family: 'Space Grotesk', 'Inter', sans-serif;
+			margin: 0 0 1.25rem;
+			font-size: 2rem;
+			font-weight: 700;
+			letter-spacing: -0.02em;
+		}
+		p { margin: .25rem 0; color: #94a3b8; font-size: .9rem; letter-spacing: .01em; }
+		.actions {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: .6rem;
+			margin-bottom: 1rem;
+		}
+		.btn {
+			display: inline-flex;
+			align-items: center;
+			gap: .5rem;
+			padding: .7rem 1.4rem;
+			text-decoration: none;
+			font-weight: 600;
+			font-size: .95rem;
+			border-radius: 999px;
+			transition: transform .15s ease, background .15s ease, box-shadow .15s ease, border-color .15s ease;
+		}
+		.btn:active { transform: translateY(0); }
+		.btn svg { width: 18px; height: 18px; }
+		.tg-btn {
+			background: #229ED9;
+			color: #fff;
+			box-shadow: 0 4px 14px rgba(34, 158, 217, .35);
+		}
+		.tg-btn:hover { background: #1d8bbf; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(34, 158, 217, .5); }
+		.gh-btn {
+			background: rgba(255, 255, 255, .06);
+			color: #e2e8f0;
+			border: 1px solid rgba(148, 163, 184, .35);
+		}
+		.gh-btn:hover { background: rgba(255, 255, 255, .12); border-color: rgba(148, 163, 184, .55); transform: translateY(-1px); }
 	</style>
 </head>
 <body>
@@ -56,7 +97,20 @@
 		<img src="bg.jpg" alt="">
 		<div class="card">
 			<h1>Synchronisica</h1>
-			<p class="ok"><a href="https://t.me/Synchronisica" target="_blank" rel="noopener">https://t.me/Synchronisica</a></p>
+			<div class="actions">
+				<a class="btn tg-btn" href="https://t.me/Synchronisica" target="_blank" rel="noopener">
+					<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+						<path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/>
+					</svg>
+					Open in Telegram
+				</a>
+				<a class="btn gh-btn" href="https://github.com/Andy666Fox" target="_blank" rel="noopener">
+					<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+						<path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.36-3.87-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.69 1.25 3.35.96.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.05 0 0 .97-.31 3.18 1.18A11 11 0 0 1 12 6.8c.98 0 1.97.13 2.89.39 2.21-1.49 3.18-1.18 3.18-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.7 5.4-5.27 5.69.41.36.78 1.06.78 2.13v3.16c0 .31.21.66.8.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/>
+					</svg>
+					GitHub
+				</a>
+			</div>
 			<p>www.tgrbservice.ru</p>
 		</div>
 	</div>
