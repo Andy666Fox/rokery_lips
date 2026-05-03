@@ -3,6 +3,11 @@ www.tgrbservice.ru {
 }
 
 tgrbservice.ru {
+
+	# WP-parsing block
+	@wp_probes path /xmlrpc.php /wp-admin/* /wp-login.php /wordpress/* /wp/* /blog/*
+	respond @wp_probes 444
+	
 	encode gzip
 	reverse_proxy app:8000
 
