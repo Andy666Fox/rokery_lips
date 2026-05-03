@@ -22,7 +22,7 @@ services:
       - "8000"
     environment:
       - TG_CHANNEL=${TG_CHANNEL:-Synchronisica}
-      - TG_CACHE_TTL=${TG_CACHE_TTL:-60}
+      - TG_CACHE_TTL=${TG_CACHE_TTL:60}
     volumes:
       - ./html:/app/static:ro
       - ./data:/app/data:ro
