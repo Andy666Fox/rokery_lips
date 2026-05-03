@@ -1,11 +1,10 @@
 www.tgrbservice.ru {
-    redir https://tgrbservice.ru{uri} permanent
+	redir https://tgrbservice.ru{uri} permanent
 }
 
 tgrbservice.ru {
-	root * /srv/html
-	file_server
 	encode gzip
+	reverse_proxy app:8000
 
 	header {
 		X-Content-Type-Options "nosniff"

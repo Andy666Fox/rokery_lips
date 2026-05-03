@@ -9,9 +9,23 @@ services:
       - "443:443/udp"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./html:/srv/html:ro
       - caddy_data:/data
       - caddy_config:/config
+    depends_on:
+      - app
+
+  app:
+    build: ./app
+    container_name: app
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      - TG_CHANNEL=${TG_CHANNEL:-Synchronisica}
+      - TG_CACHE_TTL=${TG_CACHE_TTL:-60}
+    volumes:
+      - ./html:/app/static:ro
+      - ./data:/app/data:ro
 
 volumes:
   caddy_data:

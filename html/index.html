@@ -9,9 +9,13 @@
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 	<link rel="icon" type="image/svg+xml" href="favicon.svg">
 	<link rel="stylesheet" href="styles.css">
+	<script src="app.js" defer></script>
 </head>
 <body>
 	<main>
+		<aside class="side tg-post" id="tg-post" aria-label="Latest Telegram post">
+			<div class="side-empty">…</div>
+		</aside>
 		<div class="stage">
 			<img src="bg.jpg" alt="">
 			<div class="card">
@@ -33,6 +37,9 @@
 				<p>www.tgrbservice.ru</p>
 			</div>
 		</div>
+		<aside class="side credits" id="credits" aria-label="Music credits">
+			<div class="credits-track" id="credits-track"></div>
+		</aside>
 	</main>
 	<footer class="site-footer">
 		<span>&copy; 2026 GoDoVoReZ Inc.</span>
