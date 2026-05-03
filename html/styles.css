@@ -25,7 +25,17 @@ main {
 }
 
 @media (max-width: 1100px) {
-	.side { display: none; }
+	main {
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+	.side {
+		width: 100%;
+		max-width: 480px;
+	}
+	.stage { order: 1; }
+	.tg-post { order: 2; }
+	.credits { order: 3; height: 400px; }
 }
 
 .tg-post {
