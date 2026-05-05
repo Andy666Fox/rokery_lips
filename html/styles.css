@@ -1,3 +1,25 @@
+@font-face {
+	font-family: 'Dragonic';
+	src: url('dragon_alphabet.ttf') format('truetype');
+	font-display: swap;
+}
+
+.Dragonic-font {
+	font-family: 'Dragonic', serif;
+	font-size: 20px;
+	line-height: 1.1;
+	word-spacing: .5em;
+}
+
+.site-header {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 1rem 1.5rem;
+	border-bottom: 1px solid rgba(148, 163, 184, .12);
+	text-align: center;
+}
+
 body {
 	font-family: 'Inter', system-ui, -apple-system, sans-serif;
 	-webkit-font-smoothing: antialiased;
