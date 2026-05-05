@@ -1,6 +1,6 @@
 @font-face {
 	font-family: 'Dragonic';
-	src: url('dragon_alphabet.ttf') format('truetype');
+	src: url('./dragon_alphabet.ttf') format('truetype');
 	font-display: swap;
 }
 
