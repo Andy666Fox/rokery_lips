@@ -27,7 +27,7 @@ services:
       - TG_PROXY=${TG_PROXY:-}
     volumes:
       - ./html:/app/static:ro
-      - ./data:/app/data:ro
+      - ./data:/app/data
 
 volumes:
   caddy_data:

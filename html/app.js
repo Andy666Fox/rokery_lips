@@ -51,5 +51,29 @@ async function loadCredits() {
 	}
 }
 
+async function loadElliptic() {
+	const list = document.getElementById('elliptic-list');
+	if (!list) return;
+	try {
+		const r = await fetch('/api/elliptic', { cache: 'no-store' });
+		if (!r.ok) throw new Error('http ' + r.status);
+		const { recent } = await r.json();
+		if (!recent || !recent.length) {
+			list.innerHTML = '';
+			return;
+		}
+		list.innerHTML = recent.map(row => {
+			const ts = row.tstamp ? new Date(row.tstamp).toLocaleString() : '';
+			return `<li class="elliptic-item">
+				<span class="elliptic-ts">${escapeHtml(ts)}</span>
+				<span class="elliptic-val">${escapeHtml(row.value || '')}</span>
+			</li>`;
+		}).join('');
+	} catch (e) {
+		list.innerHTML = '';
+	}
+}
+
 loadTelegramPost();
 loadCredits();
+loadElliptic();

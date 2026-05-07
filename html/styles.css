@@ -161,6 +161,36 @@ h1 {
 
 p { margin: .25rem 0; color: #94a3b8; font-size: .9rem; letter-spacing: .01em; }
 
+.elliptic-list {
+	list-style: none;
+	margin: 0 0 1rem;
+	padding: .5rem .75rem;
+	background: rgba(15, 23, 42, .35);
+	border: 1px solid rgba(148, 163, 184, .14);
+	border-radius: 8px;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	text-align: left;
+}
+.elliptic-list:empty { display: none; }
+.elliptic-item {
+	padding: .35rem 0;
+	border-bottom: 1px dashed rgba(148, 163, 184, .12);
+}
+.elliptic-item:last-child { border-bottom: 0; }
+.elliptic-ts {
+	display: block;
+	color: #64748b;
+	font-size: .65rem;
+	letter-spacing: .02em;
+	margin-bottom: .15rem;
+}
+.elliptic-val {
+	display: block;
+	color: #cbd5e1;
+	font-size: .72rem;
+	overflow-wrap: anywhere;
+}
+
 .actions {
 	display: flex;
 	flex-direction: column;

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from routers import credits, health, telegram
+from routers import credits, elliptic, health, telegram
 
 app = FastAPI(
     title="tgrbservice",
@@ -12,5 +12,6 @@ app = FastAPI(
 app.include_router(health.router, prefix="/api")
 app.include_router(telegram.router, prefix="/api")
 app.include_router(credits.router, prefix="/api")
+app.include_router(elliptic.router, prefix="/api")
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
