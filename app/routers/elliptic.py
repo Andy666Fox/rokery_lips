@@ -36,6 +36,6 @@ async def hit() -> JSONResponse:
     value = elliptic_value()
     _append(value)
     return JSONResponse(
-        content={"value": value, "recent": _read_recent(5)},
+        content={"value": value, "recent": _read_recent(3)},
         headers={"Cache-Control": "no-store"},
     )

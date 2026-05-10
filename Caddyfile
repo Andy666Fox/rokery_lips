@@ -7,13 +7,22 @@ tgrbservice.ru {
 	# WP-parsing block
 	@wp_probes path /xmlrpc.php /wp-admin/* /wp-login.php /wordpress/* /wp/* /blog/*
 	respond @wp_probes 444
-	
-	encode gzip
+
+	encode zstd gzip
 	reverse_proxy app:8000
+
+	@long_cache path *.woff2 *.ttf *.svg *.jpg *.jpeg *.png *.webp *.ico
+	header @long_cache Cache-Control "public, max-age=31536000, immutable"
+
+	@medium_cache path *.css *.js
+	header @medium_cache Cache-Control "public, max-age=3600"
 
 	header {
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 		-Server
 	}
 

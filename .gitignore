@@ -40,4 +40,6 @@ desktop.ini
 
 # Logs
 *.log
-*.csv
+
+# Runtime data
+data/elliptic.csv
