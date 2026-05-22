@@ -43,3 +43,6 @@ desktop.ini
 
 # Runtime data
 data/elliptic.csv
+
+# Navidrome music library
+/music/

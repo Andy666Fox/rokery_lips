@@ -2,6 +2,28 @@ www.tgrbservice.ru {
 	redir https://tgrbservice.ru{uri} permanent
 }
 
+www.music.tgrbservice.ru {
+	redir https://music.tgrbservice.ru{uri} permanent
+}
+
+music.tgrbservice.ru {
+	encode zstd gzip
+	reverse_proxy navidrome:4533
+
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
+
 tgrbservice.ru {
 
 	# WP-parsing block
