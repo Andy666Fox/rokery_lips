@@ -46,3 +46,5 @@ data/elliptic.csv
 
 # Navidrome music library
 /music/
+links.txt
+spizdit.py

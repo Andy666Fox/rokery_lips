@@ -30,23 +30,7 @@ services:
       - ./html:/app/static:ro
       - ./data:/app/data
 
-  navidrome:
-    image: deluan/navidrome:latest
-    container_name: navidrome
-    restart: unless-stopped
-    expose:
-      - "4533"
-    environment:
-      - ND_LOGLEVEL=${ND_LOGLEVEL:-info}
-      - ND_SCANSCHEDULE=${ND_SCANSCHEDULE:-1h}
-      - ND_SESSIONTIMEOUT=${ND_SESSIONTIMEOUT:-24h}
-      - ND_BASEURL=
-      - ND_ENABLEINSIGHTSCOLLECTOR=false
-    volumes:
-      - navidrome_data:/data
-      - ./music:/music:ro
 
 volumes:
   caddy_data:
   caddy_config:
-  navidrome_data:
