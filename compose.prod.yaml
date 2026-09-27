@@ -1,0 +1,12 @@
+name: synchronisica-prod
+
+services:
+  caddy:
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:-dedvnutri.space}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro

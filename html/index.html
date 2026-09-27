@@ -4,32 +4,51 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 	<title>Synchronisica</title>
+	<meta name="description" content="Synchronisica — разработка софта вперемешку с щитпостом">
+	<meta name="theme-color" content="#2c2430">
+	<link rel="canonical" href="https://dedvnutri.space/">
+
+	<meta property="og:title" content="Synchronisica">
+	<meta property="og:description" content="разработка софта вперемешку с щитпостом.">
+	<meta property="og:type" content="website">
+	<meta property="og:url" content="https://dedvnutri.space/">
+	<meta property="og:locale" content="ru_RU">
+	<meta property="og:image" content="https://dedvnutri.space/og-preview.png">
+	<meta property="og:image:type" content="image/png">
+	<meta property="og:image:width" content="1731">
+	<meta property="og:image:height" content="909">
+	<meta property="og:image:alt" content="Synchronisica — авторский Telegram-канал">
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="twitter:title" content="Synchronisica">
+	<meta name="twitter:description" content="разработка софта вперемешку с щитпостом.">
+	<meta name="twitter:image" content="https://dedvnutri.space/og-preview.png">
+
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 	<link rel="preload" href="dragon_alphabet.woff2" as="font" type="font/woff2" crossorigin>
-	<link rel="icon" type="image/svg+xml" href="favicon.svg">
+	<link rel="icon" href="favicon.ico" sizes="any">
 	<link rel="stylesheet" href="styles.css">
 	<script src="app.js" defer></script>
 </head>
 <body>
+	<a class="skip-link" href="#main">К содержимому</a>
 	<header class="site-header">
-		<span class="Dragonic-font">Homo seu gladius est aut offisiis fungitur aut hebes est</span>
+		<span class="Dragonic-font" aria-hidden="true">Homo seu gladius est aut offisiis fungitur aut hebes est</span>
 	</header>
-	<main>
-		<aside class="side tg-post" id="tg-post" aria-label="Latest Telegram post">
-			<div class="side-empty">…</div>
-		</aside>
-		<div class="stage">
-			<img src="bg.jpg" alt="">
+
+	<main id="main" tabindex="-1">
+		<section class="stage" aria-labelledby="page-title">
+			<img src="bg.jpg" alt="" fetchpriority="high" decoding="async">
 			<div class="card">
-				<h1>Synchronisica</h1>
+				<h1 id="page-title">Synchronisica</h1>
+				<p class="channel-description">Разработка софта вперемешку с щитпостом.</p>
 				<div class="actions">
 					<a class="btn tg-btn" href="https://t.me/Synchronisica" target="_blank" rel="noopener">
 						<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 							<path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/>
 						</svg>
-						Open in Telegram
+						Telegram
 					</a>
 					<a class="btn gh-btn" href="https://github.com/Andy666Fox" target="_blank" rel="noopener">
 						<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -38,14 +57,31 @@
 						GitHub
 					</a>
 				</div>
-				<ul class="elliptic-list" id="elliptic-list" aria-label="Recent elliptic values"></ul>
-				<p>www.tgrbservice.ru</p>
+				<p class="site-address">dedvnutri.space</p>
 			</div>
-		</div>
-		<aside class="side credits" id="credits" aria-label="Music credits">
-			<div class="credits-track" id="credits-track"></div>
+		</section>
+
+		<aside class="side panel tg-post" aria-labelledby="telegram-heading">
+			<h2 class="side-heading" id="telegram-heading">Recent post</h2>
+			<div id="tg-post-content" class="tg-post-content" aria-live="polite" aria-busy="true">
+				<p class="side-status">Загрузка публикации…</p>
+			</div>
+		</aside>
+
+		<aside class="side panel credits" aria-labelledby="credits-heading">
+			<div class="credits-heading-row">
+				<h2 class="side-heading" id="credits-heading">Bangers</h2>
+				<button class="credits-toggle" type="button" aria-pressed="false" hidden>Пауза</button>
+			</div>
+			<div class="credits-viewport" tabindex="0" role="region" aria-label="Музыкальные ориентиры">
+				<div class="credits-track" id="credits-track" aria-live="polite">
+					<p class="side-status">Загрузка списка…</p>
+				</div>
+			</div>
 		</aside>
 	</main>
+	<noscript><p class="no-script">Для загрузки публикации и списка музыки включите JavaScript. Ссылки на канал и GitHub доступны выше.</p></noscript>
+
 	<footer class="site-footer">
 		<span>&copy; 2026 GoDoVoReZ Inc.</span>
 	</footer>

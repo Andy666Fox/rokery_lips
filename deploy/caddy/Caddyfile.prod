@@ -1,0 +1,10 @@
+import common.caddy
+
+www.{$SITE_DOMAIN:dedvnutri.space} {
+	redir https://{$SITE_DOMAIN:dedvnutri.space}{uri} permanent
+}
+
+{$SITE_DOMAIN:dedvnutri.space} {
+	import common
+	header Strict-Transport-Security "max-age=31536000"
+}

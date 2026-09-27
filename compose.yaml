@@ -1,0 +1,48 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    restart: unless-stopped
+    logging:
+      driver: local
+    expose:
+      - "8000"
+    environment:
+      TG_CHANNEL: ${TG_CHANNEL:-Synchronisica}
+      TG_CACHE_TTL: ${TG_CACHE_TTL:-60}
+      TG_CACHE_STALE_TTL: ${TG_CACHE_STALE_TTL:-3600}
+      TG_HTTP_TIMEOUT: ${TG_HTTP_TIMEOUT:-5}
+      TG_PROXY: ${TG_PROXY:-}
+    volumes:
+      - ./data:/app/data:ro
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    logging:
+      driver: local
+    depends_on:
+      app:
+        condition: service_healthy
+    volumes:
+      - ./html:/srv:ro
+      - ./deploy/caddy/common.caddy:/etc/caddy/common.caddy:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

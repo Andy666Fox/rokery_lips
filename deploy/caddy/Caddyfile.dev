@@ -1,0 +1,5 @@
+import common.caddy
+
+:80 {
+	import common
+}

@@ -1,79 +1,153 @@
-const escapeHtml = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const REQUEST_TIMEOUT_MS = 8000;
+const CREDIT_SCROLL_DURATION_SECONDS = 60;
+
+async function fetchJson(url) {
+	const controller = new AbortController();
+	const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+	try {
+		const response = await fetch(url, { signal: controller.signal });
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}`);
+		}
+		return await response.json();
+	} finally {
+		window.clearTimeout(timeout);
+	}
+}
+
+function statusElement(message) {
+	const status = document.createElement('p');
+	status.className = 'side-status';
+	status.textContent = message;
+	return status;
+}
 
 async function loadTelegramPost() {
-	const el = document.getElementById('tg-post');
-	if (!el) return;
-	try {
-		const r = await fetch('/api/telegram/latest');
-		if (!r.ok) throw new Error('http ' + r.status);
-		const post = await r.json();
+	const container = document.getElementById('tg-post-content');
+	if (!container) return;
 
-		const parts = [];
+	container.setAttribute('aria-busy', 'true');
+	try {
+		const post = await fetchJson('/api/telegram/latest');
+		const content = document.createElement(post.link ? 'a' : 'article');
+		content.className = 'tg-post-link';
+
+		if (post.link) {
+			content.href = post.link;
+			content.target = '_blank';
+			content.rel = 'noopener';
+			content.setAttribute('aria-label', 'Открыть последнюю публикацию в Telegram');
+		}
+
 		if (post.photo) {
-			parts.push(`<img src="${escapeHtml(post.photo)}" alt="" loading="lazy">`);
+			const image = document.createElement('img');
+			image.src = post.photo;
+			image.alt = 'Изображение из последней публикации Synchronisica';
+			image.loading = 'lazy';
+			image.decoding = 'async';
+			image.addEventListener('error', () => image.remove(), { once: true });
+			content.append(image);
 		}
+
 		if (post.text) {
-			parts.push(`<div class="tg-post-text">${post.text}</div>`);
+			const text = document.createElement('p');
+			text.className = 'tg-post-text';
+			text.textContent = post.text;
+			content.append(text);
 		}
+
 		if (post.date) {
-			const d = new Date(post.date);
-			parts.push(`<div class="tg-post-meta">${d.toLocaleString()}</div>`);
+			const date = new Date(post.date);
+			if (!Number.isNaN(date.getTime())) {
+				const time = document.createElement('time');
+				time.className = 'tg-post-meta';
+				time.dateTime = post.date;
+				time.textContent = date.toLocaleString('ru-RU');
+				content.append(time);
+			}
 		}
-		const inner = parts.join('');
-		el.innerHTML = post.link
-			? `<a class="tg-post-link" href="${escapeHtml(post.link)}" target="_blank" rel="noopener">${inner}</a>`
-			: inner;
-	} catch (e) {
-		el.innerHTML = '<div class="side-empty">post unavailable</div>';
+
+		container.replaceChildren(content);
+	} catch {
+		container.replaceChildren(statusElement('Публикация временно недоступна.'));
+	} finally {
+		container.setAttribute('aria-busy', 'false');
 	}
+}
+
+function createCreditsList(rows, isClone = false) {
+	const list = document.createElement('ul');
+	list.className = 'credits-list';
+	if (isClone) {
+		list.classList.add('credits-list-clone');
+		list.setAttribute('aria-hidden', 'true');
+	}
+
+	for (const row of rows) {
+		const item = document.createElement('li');
+		item.className = 'credit';
+
+		const title = document.createElement('cite');
+		title.className = 'credit-title';
+		title.textContent = row.title;
+
+		const artist = document.createElement('span');
+		artist.className = 'credit-artist';
+		artist.textContent = row.artist;
+
+		item.append(title, artist);
+		list.append(item);
+	}
+
+	return list;
+}
+
+function configureCreditsScroll(track, originalList) {
+	const listHeight = originalList.getBoundingClientRect().height;
+	const rowGap = Number.parseFloat(window.getComputedStyle(track).rowGap) || 0;
+	const distance = listHeight + rowGap;
+	if (distance <= 0) return;
+
+	track.classList.remove('is-scrolling');
+	track.style.setProperty('--scroll-distance', `${distance}px`);
+	track.style.setProperty('--scroll-duration', `${CREDIT_SCROLL_DURATION_SECONDS}s`);
+	void track.offsetHeight;
+	track.classList.add('is-scrolling');
 }
 
 async function loadCredits() {
 	const track = document.getElementById('credits-track');
 	if (!track) return;
+
 	try {
-		const r = await fetch('/api/credits');
-		if (!r.ok) throw new Error('http ' + r.status);
-		const rows = await r.json();
-		if (!rows.length) {
-			track.parentElement.innerHTML = '<div class="side-empty">no credits</div>';
+		const rows = await fetchJson('/api/credits');
+		if (!Array.isArray(rows) || rows.length === 0) {
+			track.replaceChildren(statusElement('Список пока пуст.'));
 			return;
 		}
-		const html = rows.map(row =>
-			`<div class="credit">
-				<span class="author">${escapeHtml(row.author || '')}</span>
-				<span class="track">${escapeHtml(row.track || '')}</span>
-			</div>`
-		).join('');
-		track.innerHTML = html + html;
-	} catch (e) {
-		track.parentElement.innerHTML = '<div class="side-empty">credits unavailable</div>';
+
+		const originalList = createCreditsList(rows);
+		const clone = createCreditsList(rows, true);
+		track.replaceChildren(originalList, clone);
+
+		const toggle = document.querySelector('.credits-toggle');
+		toggle.hidden = false;
+		toggle.addEventListener('click', () => {
+			const paused = track.classList.toggle('is-paused');
+			toggle.setAttribute('aria-pressed', String(paused));
+			toggle.textContent = paused ? 'Продолжить' : 'Пауза';
+		});
+
+		const configure = () => configureCreditsScroll(track, originalList);
+		configure();
+		void document.fonts?.ready.then(configure);
+
+		new ResizeObserver(configure).observe(originalList);
+	} catch {
+		track.replaceChildren(statusElement('Список музыки временно недоступен.'));
 	}
 }
 
-async function loadElliptic() {
-	const list = document.getElementById('elliptic-list');
-	if (!list) return;
-	try {
-		const r = await fetch('/api/elliptic', { cache: 'no-store' });
-		if (!r.ok) throw new Error('http ' + r.status);
-		const { recent } = await r.json();
-		if (!recent || !recent.length) {
-			list.innerHTML = '';
-			return;
-		}
-		list.innerHTML = recent.map(row => {
-			const ts = row.tstamp ? new Date(row.tstamp).toLocaleString() : '';
-			return `<li class="elliptic-item">
-				<span class="elliptic-ts">${escapeHtml(ts)}</span>
-				<span class="elliptic-val">${escapeHtml(row.value || '')}</span>
-			</li>`;
-		}).join('');
-	} catch (e) {
-		list.innerHTML = '';
-	}
-}
-
-loadTelegramPost();
-loadCredits();
-loadElliptic();
+void loadTelegramPost();
+void loadCredits();

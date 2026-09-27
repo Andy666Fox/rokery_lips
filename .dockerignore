@@ -1,0 +1,11 @@
+*
+!pyproject.toml
+!uv.lock
+!app/
+!app/**
+!html/
+!html/**
+!data/
+!data/credits.csv
+app/**/__pycache__/
+app/**/*.pyc

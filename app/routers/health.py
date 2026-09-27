@@ -1,8 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
+from pydantic import BaseModel
 
 router = APIRouter(tags=["health"])
 
 
-@router.get("/health")
-async def health() -> dict:
-    return {"status": "ok"}
+class HealthStatus(BaseModel):
+    status: str
+
+
+@router.get("/health", response_model=HealthStatus)
+def health(response: Response) -> HealthStatus:
+    response.headers["Cache-Control"] = "no-store"
+    return HealthStatus(status="ok")

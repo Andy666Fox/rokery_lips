@@ -10,16 +10,27 @@ env/
 .mypy_cache/
 .ruff_cache/
 .coverage
+.coverage.*
+htmlcov/
+coverage.xml
+junit.xml
+.tox/
+.nox/
+build/
+dist/
 *.egg-info/
 
 # Node
 node_modules/
 npm-debug.log*
+playwright-report/
+test-results/
 
 # Environment / secrets
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+.ssh/
 *.pem
 *.key
 
@@ -32,6 +43,8 @@ docker-compose.override.yml
 *.swp
 *.swo
 *~
+*.bak
+*.tmp
 
 # OS
 .DS_Store
@@ -40,11 +53,10 @@ desktop.ini
 
 # Logs
 *.log
+.local/
 
-# Runtime data
-data/elliptic.csv
-
-# Navidrome music library
-/music/
-links.txt
-spizdit.py
+# Local deployment records and backups; keep maintained docs and checks in Git.
+/DEPLOYMENT_STATUS.md
+/PROJECT_STATUS_*.md
+/backups/
+/release*.tar.gz

@@ -1,0 +1,13 @@
+name: synchronisica-dev
+
+services:
+  app:
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./app:/app/app:ro
+      - ./html:/app/html:ro
+  caddy:
+    ports:
+      - "${DEV_BIND:-127.0.0.1}:${DEV_PORT:-8080}:80"
+    volumes:
+      - ./deploy/caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
