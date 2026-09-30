@@ -7,6 +7,62 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 
+def check_post_media(browser, url: str) -> None:
+    """Exercise actual GIF decoding and muted MP4 playback through the site's CSP."""
+    fixtures = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
+    page = browser.new_page(viewport={"width": 375, "height": 812})
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    for extension, mime in (("mp4", "video/mp4"), ("gif", "image/gif")):
+        body = (fixtures / f"animation.{extension}").read_bytes()
+        page.route(
+            f"https://cdn.example/animation.{extension}",
+            lambda route, _request, body=body, mime=mime: route.fulfill(
+                body=body, content_type=mime
+            ),
+        )
+    post = {
+        "video": "https://cdn.example/animation.mp4",
+        "photo": f"{url}/bg.jpg",
+        "text": "Animation test " * 100,
+        "link": "https://t.me/Synchronisica/42",
+        "date": "2026-09-30T12:00:00Z",
+    }
+    page.route("**/api/telegram/latest", lambda route: route.fulfill(json=post))
+    page.goto(url, wait_until="networkidle")
+    page.wait_for_function("""() => {
+        const v = document.querySelector('.tg-post-link video');
+        return v && v.readyState >= 2 && !v.paused && v.currentTime > 0;
+    }""")
+    assert page.locator(".tg-post-link video").evaluate(
+        "v => v.muted && v.loop && v.playsInline && v.videoWidth === 64"
+    )
+    assert page.locator(".tg-post-link img").count() == 0
+    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    page.emulate_media(reduced_motion="reduce")
+    page.reload(wait_until="networkidle")
+    assert page.locator(".tg-post-link video").evaluate("v => !v.autoplay && v.paused")
+
+    post["video"] = None
+    post["photo"] = "https://cdn.example/animation.gif"
+    page.reload(wait_until="networkidle")
+    page.wait_for_function("""() => {
+        const image = document.querySelector('.tg-post-link img');
+        return image && image.complete && image.naturalWidth === 64;
+    }""")
+
+    post["video"] = "https://cdn.example/broken.mp4"
+    post["photo"] = f"{url}/bg.jpg"
+    page.route("https://cdn.example/broken.mp4", lambda route: route.fulfill(status=404))
+    page.reload(wait_until="networkidle")
+    page.locator(".tg-post-link img").wait_for()
+    assert page.locator(".tg-post-link video").count() == 0
+    assert page.locator(".tg-post-link").get_attribute("href") == post["link"]
+    assert not errors, errors
+    page.close()
+    print("Media OK: GIF, MP4 autoplay, reduced motion, unavailable video fallback.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default="http://127.0.0.1:8080")
@@ -68,9 +124,12 @@ def main() -> None:
                 page.screenshot(path=str(output / f"{width}.png"), full_page=True)
             print(f"Layout OK: {width}x{height}")
 
-        page.get_by_role("button", name="Пауза", exact=True).click()
-        assert page.locator(".credits-toggle").get_attribute("aria-pressed") == "true"
-        assert page.locator(".credits-list-clone").is_hidden()
+        assert page.locator(".credits button").count() == 0
+        page.locator(".credits-viewport").focus()
+        assert (
+            page.locator(".credits-track").evaluate("e => getComputedStyle(e).animationPlayState")
+            == "paused"
+        )
         page.emulate_media(reduced_motion="reduce")
         assert (
             page.locator(".credits-track").evaluate("e => getComputedStyle(e).animationName")
@@ -107,7 +166,7 @@ def main() -> None:
         mobile_page.route("**/api/telegram/latest", lambda route: route.fulfill(json=post))
         mobile_page.goto(args.url, wait_until="networkidle")
         mobile_page.locator(".credit").first.wait_for()
-        assert mobile_page.locator(".credits-toggle").is_hidden()
+        assert mobile_page.locator(".credits button").count() == 0
         assert mobile_page.locator(".credits-list-clone").is_hidden()
         assert (
             mobile_page.locator(".credits-track").evaluate("e => getComputedStyle(e).animationName")
@@ -117,6 +176,7 @@ def main() -> None:
         assert mobile_page.locator(".credits-viewport").evaluate("e => e.scrollTop > 0")
         mobile_page.screenshot(path=str(output / "touch-mobile.png"), full_page=True)
         mobile.close()
+        check_post_media(browser, args.url)
         browser.close()
         print("Browser checks passed: layouts, controls, reduced motion, text zoom, API fallback.")
 

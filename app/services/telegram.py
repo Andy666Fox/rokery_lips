@@ -20,6 +20,7 @@ class TelegramPost(BaseModel):
 
     text: str | None = None
     photo: str | None = None
+    video: str | None = None
     link: str | None = None
     date: datetime | None = None
 
@@ -57,6 +58,13 @@ def _string_attribute(element: Tag | None, name: str) -> str | None:
     return value if isinstance(value, str) else None
 
 
+def _background_image_url(element: Tag | None) -> str | None:
+    style = _string_attribute(element, "style")
+    if style and (match := _PHOTO_URL_PATTERN.search(style)):
+        return _safe_http_url(match.group(1))
+    return None
+
+
 def parse_latest_post(html: str) -> TelegramPost:
     """Parse the latest post without exposing Telegram-owned HTML."""
 
@@ -69,11 +77,28 @@ def parse_latest_post(html: str) -> TelegramPost:
     text_element = message.select_one("div.tgme_widget_message_text")
     text = text_element.get_text(separator="\n", strip=True) if text_element else None
 
-    photo = None
-    photo_element = message.select_one("a.tgme_widget_message_photo_wrap")
-    style = _string_attribute(photo_element, "style")
-    if style and (match := _PHOTO_URL_PATTERN.search(style)):
-        photo = _safe_http_url(match.group(1))
+    photo = _background_image_url(message.select_one(".tgme_widget_message_photo_wrap"))
+    if not photo:
+        photo = _safe_http_url(
+            _string_attribute(
+                message.select_one(
+                    ".tgme_widget_message_photo_wrap img, img.tgme_widget_message_photo"
+                ),
+                "src",
+            )
+        )
+
+    # Telegram publishes GIF animations as looping MP4s, alongside a blurred duplicate.
+    video_element = message.select_one("video.tgme_widget_message_video:not(.blured)")
+    video = _safe_http_url(_string_attribute(video_element, "src"))
+    if video_element is not None:
+        video = video or _safe_http_url(
+            _string_attribute(video_element.select_one("source"), "src")
+        )
+        photo = photo or _safe_http_url(_string_attribute(video_element, "poster"))
+        photo = photo or _background_image_url(
+            message.select_one(".tgme_widget_message_video_thumb")
+        )
 
     link_element = message.select_one("a.tgme_widget_message_date")
     link = _safe_http_url(_string_attribute(link_element, "href"))
@@ -86,10 +111,10 @@ def parse_latest_post(html: str) -> TelegramPost:
         except ValueError:
             logger.warning("telegram response contained an invalid date: %s", date_value)
 
-    if not any((text, photo, link)):
+    if not any((text, photo, video, link)):
         raise TelegramResponseError("Latest Telegram post did not contain usable content")
 
-    return TelegramPost(text=text, photo=photo, link=link, date=date)
+    return TelegramPost(text=text, photo=photo, video=video, link=link, date=date)
 
 
 class TelegramService:

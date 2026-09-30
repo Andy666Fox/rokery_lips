@@ -7,13 +7,13 @@
 	@code path *.css *.js
 	header @code Cache-Control "no-cache"
 
-	@media path *.woff2 *.ttf *.jpg *.jpeg *.png *.webp *.ico *.svg
+	@media path *.woff2 *.ttf *.jpg *.jpeg *.png *.webp *.gif *.mp4 *.ico *.svg
 	header @media Cache-Control "public, max-age=604800"
 
 	header {
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; media-src 'self' https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 		-Server
 	}

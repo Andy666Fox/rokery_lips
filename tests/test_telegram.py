@@ -33,6 +33,50 @@ class MutableClock:
 
 
 class TelegramParserTests(unittest.TestCase):
+    def test_extracts_telegram_animation_and_preview(self) -> None:
+        html = """
+        <div class="tgme_widget_message_wrap">
+          <div class="tgme_widget_message_video_thumb"
+               style="background-image:url('https://cdn.example/poster.jpg')"></div>
+          <video class="tgme_widget_message_video blured" src="https://cdn.example/blur.mp4"></video>
+          <video class="tgme_widget_message_video js-message_video" autoplay loop muted
+                 src="https://cdn.example/animation.mp4?token=public"></video>
+        </div>
+        """
+        post = parse_latest_post(html)
+        self.assertEqual(post.video, "https://cdn.example/animation.mp4?token=public")
+        self.assertEqual(post.photo, "https://cdn.example/poster.jpg")
+
+    def test_extracts_video_source_child(self) -> None:
+        post = parse_latest_post("""
+        <div class="tgme_widget_message_wrap">
+          <video class="tgme_widget_message_video" poster="https://cdn.example/preview.jpg">
+            <source src="https://cdn.example/animation.mp4" type="video/mp4">
+          </video>
+        </div>""")
+        self.assertEqual(post.video, "https://cdn.example/animation.mp4")
+        self.assertEqual(post.photo, "https://cdn.example/preview.jpg")
+
+    def test_preserves_direct_gif_image(self) -> None:
+        post = parse_latest_post("""
+        <div class="tgme_widget_message_wrap">
+          <a class="tgme_widget_message_photo_wrap">
+            <img src="https://cdn.example/animation.gif">
+          </a>
+        </div>""")
+        self.assertEqual(post.photo, "https://cdn.example/animation.gif")
+        self.assertIsNone(post.video)
+
+    def test_rejects_unsafe_video_and_poster_urls(self) -> None:
+        post = parse_latest_post("""
+        <div class="tgme_widget_message_wrap">
+          <div class="tgme_widget_message_text">Safe text</div>
+          <video class="tgme_widget_message_video" src="javascript:alert(1)"
+                 poster="data:text/html,unsafe"></video>
+        </div>""")
+        self.assertIsNone(post.video)
+        self.assertIsNone(post.photo)
+
     def test_returns_plain_text_and_safe_urls(self) -> None:
         post = parse_latest_post(VALID_HTML)
 

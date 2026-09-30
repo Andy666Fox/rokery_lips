@@ -137,7 +137,8 @@ main {
 	color: var(--accent-dark);
 }
 
-.tg-post-link img {
+.tg-post-link img,
+.tg-post-link video {
 	display: block;
 	width: 100%;
 	height: auto;
@@ -411,41 +412,15 @@ h1 {
 	}
 }
 
-.credits-heading-row {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: .5rem;
-	margin-bottom: .5rem;
-}
-
-.credits-toggle {
-	min-height: 44px;
-	padding: .5rem .75rem;
-	border: 1px solid var(--accent-dark);
-	border-radius: 8px;
-	color: var(--accent-dark);
-	background: transparent;
-	font: inherit;
-	font-size: .8rem;
-	cursor: pointer;
-}
-
-.credits-track.is-paused,
 .credits:focus-within .credits-track,
 .credits:hover .credits-track {
 	animation-play-state: paused;
 }
 
-.credits:has(.is-paused) .credits-viewport,
 .credits:focus-within .credits-viewport {
 	overflow-y: auto;
 	mask-image: none;
 }
-
-.credits-track.is-paused { animation: none; }
-.credits-track.is-paused .credits-list-clone { display: none; }
 
 .skip-link {
 	position: fixed;
@@ -464,7 +439,7 @@ h1 {
 @media (prefers-reduced-motion: reduce), (hover: none) {
 	.credits-viewport { overflow-y: auto; mask-image: none; }
 	.credits-track.is-scrolling { animation: none; will-change: auto; }
-	.credits-list-clone, .credits-toggle { display: none; }
+	.credits-list-clone { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

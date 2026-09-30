@@ -23,6 +23,16 @@ function statusElement(message) {
 	return status;
 }
 
+function createPostImage(url) {
+	const image = document.createElement('img');
+	image.src = url;
+	image.alt = 'Изображение из последней публикации Synchronisica';
+	image.loading = 'lazy';
+	image.decoding = 'async';
+	image.addEventListener('error', () => image.remove(), { once: true });
+	return image;
+}
+
 async function loadTelegramPost() {
 	const container = document.getElementById('tg-post-content');
 	if (!container) return;
@@ -40,14 +50,24 @@ async function loadTelegramPost() {
 			content.setAttribute('aria-label', 'Открыть последнюю публикацию в Telegram');
 		}
 
-		if (post.photo) {
-			const image = document.createElement('img');
-			image.src = post.photo;
-			image.alt = 'Изображение из последней публикации Synchronisica';
-			image.loading = 'lazy';
-			image.decoding = 'async';
-			image.addEventListener('error', () => image.remove(), { once: true });
-			content.append(image);
+		if (post.video) {
+			const video = document.createElement('video');
+			video.muted = true;
+			video.defaultMuted = true;
+			video.autoplay = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			video.loop = true;
+			video.playsInline = true;
+			video.preload = 'metadata';
+			video.setAttribute('aria-label', 'Анимация из последней публикации Synchronisica');
+			if (post.photo) video.poster = post.photo;
+			video.addEventListener('error', () => {
+				if (post.photo) video.replaceWith(createPostImage(post.photo));
+				else video.remove();
+			}, { once: true });
+			video.src = post.video;
+			content.append(video);
+		} else if (post.photo) {
+			content.append(createPostImage(post.photo));
 		}
 
 		if (post.text) {
@@ -130,14 +150,6 @@ async function loadCredits() {
 		const originalList = createCreditsList(rows);
 		const clone = createCreditsList(rows, true);
 		track.replaceChildren(originalList, clone);
-
-		const toggle = document.querySelector('.credits-toggle');
-		toggle.hidden = false;
-		toggle.addEventListener('click', () => {
-			const paused = track.classList.toggle('is-paused');
-			toggle.setAttribute('aria-pressed', String(paused));
-			toggle.textContent = paused ? 'Продолжить' : 'Пауза';
-		});
 
 		const configure = () => configureCreditsScroll(track, originalList);
 		configure();
