@@ -96,13 +96,9 @@ async function loadTelegramPost() {
 	}
 }
 
-function createCreditsList(rows, isClone = false) {
+function createCreditsList(rows) {
 	const list = document.createElement('ul');
 	list.className = 'credits-list';
-	if (isClone) {
-		list.classList.add('credits-list-clone');
-		list.setAttribute('aria-hidden', 'true');
-	}
 
 	for (const row of rows) {
 		const item = document.createElement('li');
@@ -129,11 +125,28 @@ function configureCreditsScroll(track, originalList) {
 	const distance = listHeight + rowGap;
 	if (distance <= 0) return;
 
-	track.classList.remove('is-scrolling');
 	track.style.setProperty('--scroll-distance', `${distance}px`);
 	track.style.setProperty('--scroll-duration', `${CREDIT_SCROLL_DURATION_SECONDS}s`);
-	void track.offsetHeight;
 	track.classList.add('is-scrolling');
+}
+
+function setupCreditsScroll(track, originalList) {
+	const staticList = window.matchMedia('(prefers-reduced-motion: reduce), (hover: none)');
+	const resize = new ResizeObserver(() => configureCreditsScroll(track, originalList));
+	const update = () => {
+		resize.disconnect();
+		track.querySelector('.credits-list-clone')?.remove();
+		track.classList.remove('is-scrolling');
+		if (staticList.matches) return;
+
+		const clone = originalList.cloneNode(true);
+		clone.classList.add('credits-list-clone');
+		clone.setAttribute('aria-hidden', 'true');
+		track.append(clone);
+		resize.observe(originalList);
+	};
+	staticList.addEventListener('change', update);
+	update();
 }
 
 async function loadCredits() {
@@ -148,14 +161,8 @@ async function loadCredits() {
 		}
 
 		const originalList = createCreditsList(rows);
-		const clone = createCreditsList(rows, true);
-		track.replaceChildren(originalList, clone);
-
-		const configure = () => configureCreditsScroll(track, originalList);
-		configure();
-		void document.fonts?.ready.then(configure);
-
-		new ResizeObserver(configure).observe(originalList);
+		track.replaceChildren(originalList);
+		setupCreditsScroll(track, originalList);
 	} catch {
 		track.replaceChildren(statusElement('Список музыки временно недоступен.'));
 	}

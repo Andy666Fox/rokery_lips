@@ -320,10 +320,10 @@ h1 {
 	display: flex;
 	flex-direction: column;
 	row-gap: var(--credits-gap);
-	will-change: transform;
 }
 
 .credits-track.is-scrolling {
+	will-change: transform;
 	animation: scroll-up var(--scroll-duration) linear infinite;
 }
 
@@ -392,6 +392,9 @@ h1 {
 }
 
 @media (max-width: 599px) {
+	.site-header { padding: .75rem 1rem; }
+	.Dragonic-font { font-size: 1rem; }
+
 	main {
 		padding: 1rem;
 		max-width: 480px;
@@ -408,8 +411,20 @@ h1 {
 	}
 
 	.channel-description {
-		font-size: .82rem;
+		font-size: 1rem;
 	}
+	.tg-post-text, .credit { font-size: 1rem; }
+	.credit-artist, .tg-post-meta { font-size: .875rem; }
+}
+
+@media (max-width: 959px), (hover: none) {
+	.panel, .card {
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+		box-shadow: 0 4px 12px rgba(20, 14, 22, .18);
+	}
+	.stage { box-shadow: 0 6px 18px rgba(20, 14, 22, .24); }
+	.stage > img, .tg-post-link img, .tg-post-link video { filter: none; }
 }
 
 .credits:focus-within .credits-track,
