@@ -4,15 +4,19 @@ from datetime import UTC, datetime
 from typing import Any
 
 from aiogram.types import Update
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from random_telegram_bot.catalogue import Catalogue, normalize_channel
 from random_telegram_bot.models import Channel, Rating, User
+from random_telegram_bot.suggestions import CheckChannel, accept_suggestion
+from random_telegram_bot.telegram_web import public_username
 
 
 async def prepare_actions(
-    update: Update, db: AsyncSession, catalogue: Catalogue
+    update: Update,
+    db: AsyncSession,
+    catalogue: Catalogue,
+    check_channel: CheckChannel | None = None,
 ) -> list[dict[str, Any]]:
     message = update.message
     callback = update.callback_query
@@ -30,6 +34,7 @@ async def prepare_actions(
     if callback:
         parts = (callback.data or "").split(":")
         text = "Оценка не распознана"
+        rated = False
         if (
             len(parts) == 3
             and parts[0] == "rate"
@@ -51,7 +56,25 @@ async def prepare_actions(
                 channel.likes += int(score == 1)
                 channel.dislikes += int(score == -1)
                 text = "Спасибо за оценку!"
-        return [{"method": "answerCallbackQuery", "callback_query_id": callback.id, "text": text}]
+                rated = True
+        actions: list[dict[str, Any]] = []
+        if rated:
+            edit: dict[str, Any] = {
+                "method": "editMessageReplyMarkup",
+                "reply_markup": {"inline_keyboard": []},
+            }
+            if callback.message is not None:
+                edit.update(
+                    chat_id=callback.message.chat.id, message_id=callback.message.message_id
+                )
+                actions.append(edit)
+            elif callback.inline_message_id is not None:
+                edit["inline_message_id"] = callback.inline_message_id
+                actions.append(edit)
+        actions.append(
+            {"method": "answerCallbackQuery", "callback_query_id": callback.id, "text": text}
+        )
+        return actions
     if not message:
         return []
     text = (message.text or "").strip()
@@ -74,18 +97,11 @@ async def prepare_actions(
             response = "Отправьте @username или https://t.me/username. Отмена: /cancel."
         else:
             try:
-                name = normalize_channel(candidate)
+                name = public_username(candidate) or normalize_channel(candidate)
             except ValueError:
                 response = "Нужна ссылка на публичный канал или @username. Отмена: /cancel."
             else:
-                existing = await db.scalar(select(Channel).where(Channel.channelnick == name))
-                if existing:
-                    response = "Этот канал уже есть в каталоге или ожидает проверки."
-                else:
-                    db.add(Channel(channelnick=name, status=False, added_at=datetime.now(UTC)))
-                    user.suggested_channels += 1
-                    response = "Канал отправлен на проверку. Спасибо!"
-                user.awaiting_suggestion = False
+                response = await accept_suggestion(db, user, name, check_channel)
     elif command == "/random" or text == "Найти канал":
         chosen = await catalogue.choose()
         if chosen is None:

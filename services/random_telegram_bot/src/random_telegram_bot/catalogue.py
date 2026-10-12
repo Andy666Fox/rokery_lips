@@ -4,6 +4,7 @@ import asyncio
 import re
 import secrets
 import time
+from array import array
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -26,30 +27,54 @@ class Catalogue:
         self.sessions = sessions
         self.ttl = ttl
         self._expires = 0.0
-        self._channels: tuple[tuple[int, str], ...] = ()
+        # Eight bytes per ID; retaining ORM rows/usernames for a large catalogue
+        # can exhaust the bot's memory while refreshing the cache.
+        self._channels: array[int] = array("q")
         self._lock = asyncio.Lock()
 
-    async def choose(self) -> tuple[int, str] | None:
+    async def _refresh(self) -> None:
         if time.monotonic() >= self._expires:
             async with self._lock:
                 if time.monotonic() >= self._expires:
                     async with self.sessions() as db:
-                        rows = (
-                            await db.execute(
-                                select(Channel.channel_id, Channel.channelnick).where(
-                                    Channel.status.is_(True)
-                                )
-                            )
-                        ).all()
-                    valid = []
-                    for channel_id, username in rows:
+                        rows = await db.stream(
+                            select(Channel.channel_id, Channel.channelnick)
+                            .where(Channel.status.is_(True))
+                            .execution_options(yield_per=1000)
+                        )
+                        valid: array[int] = array("q")
                         try:
-                            valid.append((channel_id, normalize_channel(username)))
-                        except ValueError:
-                            continue
-                    self._channels = tuple(valid)
+                            async for channel_id, username in rows:
+                                try:
+                                    normalize_channel(username)
+                                except ValueError:
+                                    continue
+                                valid.append(channel_id)
+                        finally:
+                            await rows.close()
+                    self._channels = valid
                     self._expires = time.monotonic() + self.ttl
-        return secrets.choice(self._channels) if self._channels else None
+
+    async def choose(self) -> tuple[int, str] | None:
+        # Recheck status so a retired channel is not served from a warm cache.
+        for _ in range(2):
+            await self._refresh()
+            if not self._channels:
+                return None
+            identifier = secrets.choice(self._channels)
+            async with self.sessions() as db:
+                username = await db.scalar(
+                    select(Channel.channelnick).where(
+                        Channel.channel_id == identifier, Channel.status.is_(True)
+                    )
+                )
+            if username is not None:
+                try:
+                    return identifier, normalize_channel(username)
+                except ValueError:
+                    pass
+            self._expires = 0
+        return None
 
 
 class RateLimiter:

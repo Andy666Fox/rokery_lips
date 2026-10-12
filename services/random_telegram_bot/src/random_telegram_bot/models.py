@@ -4,7 +4,18 @@ import time
 from datetime import datetime
 from typing import cast
 
-from sqlalchemy import JSON, BigInteger, Boolean, DateTime, Float, Index, Integer, String, Text
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 ID = BigInteger().with_variant(Integer, "sqlite")
@@ -50,6 +61,12 @@ class Channel(Base):
     likes: Mapped[int] = cast("Mapped[int]", mapped_column(default=0))
     dislikes: Mapped[int] = cast("Mapped[int]", mapped_column(default=0))
     avg_score: Mapped[float] = cast("Mapped[float]", mapped_column(Float, default=0))
+    subscriber_count: Mapped[int | None] = cast("Mapped[int | None]", mapped_column(BigInteger))
+    subscriber_display: Mapped[str | None] = cast("Mapped[str | None]", mapped_column(String(32)))
+    last_post_at: Mapped[datetime | None] = cast("Mapped[datetime | None]", mapped_column(DateTime))
+    last_checked_at: Mapped[datetime | None] = cast(
+        "Mapped[datetime | None]", mapped_column(DateTime)
+    )
 
 
 class Rating(Base):
@@ -57,6 +74,45 @@ class Rating(Base):
     telegram_id: Mapped[int] = cast("Mapped[int]", mapped_column(BigInteger, primary_key=True))
     channel_id: Mapped[int] = cast("Mapped[int]", mapped_column(ID, primary_key=True))
     score: Mapped[int] = cast("Mapped[int]", mapped_column(Integer))
+
+
+class ChannelCheck(Base):
+    """Persistent, independently scheduled checks for CSV imports."""
+
+    __tablename__ = "channel_checks"
+    __table_args__ = (Index("ix_channel_checks_due", "next_check_at", "channel_id"),)
+    channel_id: Mapped[int] = cast(
+        "Mapped[int]", mapped_column(ID, ForeignKey("channels.channel_id"), primary_key=True)
+    )
+    state: Mapped[str] = cast("Mapped[str]", mapped_column(String(16), default="pending"))
+    next_check_at: Mapped[float] = cast("Mapped[float]", mapped_column(Float, default=0))
+    attempts: Mapped[int] = cast("Mapped[int]", mapped_column(default=0))
+    last_error: Mapped[str | None] = cast("Mapped[str | None]", mapped_column(String(64)))
+    import_sha256: Mapped[str] = cast("Mapped[str]", mapped_column(String(64)))
+    source_urls: Mapped[str] = cast("Mapped[str]", mapped_column(Text))
+    attribution: Mapped[str] = cast("Mapped[str]", mapped_column(Text))
+
+
+class VerificationControl(Base):
+    __tablename__ = "verification_control"
+    name: Mapped[str] = cast("Mapped[str]", mapped_column(String(32), primary_key=True))
+    not_before: Mapped[float] = cast("Mapped[float]", mapped_column(Float, default=0))
+
+
+class DiscoveredChannel(Base):
+    """Only externally discovered channels; legacy/suggested rows are not adopted."""
+
+    __tablename__ = "discovered_channels"
+    telegram_id: Mapped[int] = cast("Mapped[int]", mapped_column(BigInteger, primary_key=True))
+    channel_id: Mapped[int] = cast(
+        "Mapped[int]", mapped_column(ID, ForeignKey("channels.channel_id"), unique=True)
+    )
+    username: Mapped[str] = cast("Mapped[str]", mapped_column(String(32), unique=True))
+    sources: Mapped[list[dict[str, object]]] = cast(
+        "Mapped[list[dict[str, object]]]", mapped_column(JSON)
+    )
+    verified_at: Mapped[float] = cast("Mapped[float]", mapped_column(Float))
+    identity_source: Mapped[str] = cast("Mapped[str]", mapped_column(String(32)))
 
 
 class Inbox(Base):

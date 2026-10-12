@@ -2,6 +2,14 @@
     handle /monitoring {
         redir /monitoring/ 308
     }
+	handle /monitoring/operations {
+		redir /monitoring/operations/ 308
+	}
+	handle /monitoring/operations/* {
+		header Cache-Control "no-store"
+		header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+		reverse_proxy bot:8001
+	}
     handle_path /monitoring/* {
         reverse_proxy beszel:8090
     }

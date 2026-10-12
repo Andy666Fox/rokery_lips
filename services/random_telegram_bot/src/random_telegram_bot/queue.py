@@ -14,7 +14,7 @@ from typing import Any
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
-from aiogram.methods import AnswerCallbackQuery, SendMessage
+from aiogram.methods import AnswerCallbackQuery, EditMessageReplyMarkup, SendMessage
 from aiogram.types import Update
 from sqlalchemy import delete, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -23,6 +23,7 @@ from sqlalchemy.orm import aliased
 from random_telegram_bot.catalogue import Catalogue
 from random_telegram_bot.handlers import prepare_actions
 from random_telegram_bot.models import Inbox
+from random_telegram_bot.suggestions import CheckChannel
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,23 @@ async def deliver(bot: Bot, action: dict[str, Any]) -> None:
     if method == "sendMessage":
         await bot(SendMessage.model_validate(data))
     elif method == "answerCallbackQuery":
-        await bot(AnswerCallbackQuery.model_validate(data))
+        try:
+            await bot(AnswerCallbackQuery.model_validate(data))
+        except TelegramBadRequest as error:
+            if not any(
+                reason in error.message.lower()
+                for reason in ("query is too old", "query_id_invalid")
+            ):
+                raise
+    elif method == "editMessageReplyMarkup":
+        try:
+            await bot(EditMessageReplyMarkup.model_validate(data))
+        except TelegramBadRequest as error:
+            if not any(
+                reason in error.message.lower()
+                for reason in ("message is not modified", "message to edit not found")
+            ):
+                raise
     else:
         raise ValueError("Unsupported durable reply method")
 
@@ -75,11 +92,14 @@ class Workers:
         catalogue: Catalogue,
         sender: Callable[[dict[str, Any]], Awaitable[None]],
         count: int = 4,
+        *,
+        check_channel: CheckChannel | None = None,
     ) -> None:
         self.sessions = sessions
         self.catalogue = catalogue
         self.sender = sender
         self.count = count
+        self.check_channel = check_channel
         self.wake = asyncio.Event()
         self.tasks: list[asyncio.Task[None]] = []
 
@@ -100,7 +120,7 @@ class Workers:
             assert row is not None
             if row.actions is None:
                 row.actions = await prepare_actions(
-                    Update.model_validate(row.payload), db, self.catalogue
+                    Update.model_validate(row.payload), db, self.catalogue, self.check_channel
                 )
             assert row.actions is not None
             actions = list(row.actions)

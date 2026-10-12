@@ -1,5 +1,27 @@
 # Passwords live in the private .env.integration file. No monitoring port is public.
 services:
+  bot:
+    environment:
+      BESZEL_URL: http://beszel:8090
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-synchronisica-prod}
+
+  catalogue-checker:
+    build:
+      context: .
+      dockerfile: services/random_telegram_bot/Dockerfile
+    restart: unless-stopped
+    mem_limit: 128m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: local
+    environment:
+      DATABASE_URL: mysql+aiomysql://random_bot:${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}@mysql:3306/random_bot
+    command: [python, -m, random_telegram_bot.catalogue_jobs, watch, --limit, "100", --delay, "1.5", --interval, "300"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+
   caddy:
     volumes:
       - ./deploy/caddy/observability.caddy:/etc/caddy/observability.caddy:ro

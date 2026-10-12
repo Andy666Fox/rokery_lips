@@ -7,6 +7,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from functools import partial
 
+import httpx
 from aiogram import Bot
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.types import Update
@@ -20,7 +21,9 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from random_telegram_bot.catalogue import Catalogue, RateLimiter
 from random_telegram_bot.config import Settings
 from random_telegram_bot.models import Inbox
+from random_telegram_bot.operations import router as operations_router
 from random_telegram_bot.queue import Workers, deliver
+from random_telegram_bot.suggestions import ChannelValidator
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -30,17 +33,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         engine = create_async_engine(config.database_url, pool_pre_ping=True)
         sessions = async_sessionmaker(engine, expire_on_commit=False)
         catalogue = Catalogue(sessions, config.catalogue_ttl)
+        web_client = httpx.AsyncClient()
         bot = (
             Bot(config.bot_token, session=AiohttpSession(timeout=10)) if config.bot_token else None
         )
         workers = (
-            Workers(sessions, catalogue, partial(deliver, bot), config.workers) if bot else None
+            Workers(
+                sessions,
+                catalogue,
+                partial(deliver, bot),
+                config.workers,
+                check_channel=ChannelValidator(web_client).verify,
+            )
+            if bot
+            else None
         )
         application.state.settings = config
         application.state.sessions = sessions
         application.state.catalogue = catalogue
         application.state.limiter = RateLimiter()
         application.state.workers = workers
+        application.state.web_client = web_client
         if workers:
             workers.start()
         try:
@@ -50,11 +63,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 await workers.stop()
             if bot:
                 await bot.session.close()
+            await web_client.aclose()
             await engine.dispose()
 
     application = FastAPI(
         title="Random Telegram channel", lifespan=lifespan, docs_url=None, redoc_url=None
     )
+    application.include_router(operations_router)
 
     @application.get("/health/live")
     async def live() -> dict[str, str]:
