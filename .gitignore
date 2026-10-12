@@ -26,6 +26,7 @@ node_modules/
 # Tool output and editor metadata.
 build/
 dist/
+.tests/
 *.egg-info/
 .mypy_cache/
 .idea/
