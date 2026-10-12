@@ -58,6 +58,7 @@ services:
       driver: local
     environment:
       CONTAINERS: "1"
+      ALLOW_LOGS: "1"
       POST: "0"
     ports: ["127.0.0.1:2375:2375"]
     volumes:
