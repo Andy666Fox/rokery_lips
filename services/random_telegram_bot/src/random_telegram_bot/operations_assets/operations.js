@@ -6,7 +6,7 @@ let diagramURL;
 
 async function api(path) {
   let token;
-  try { token = JSON.parse(localStorage.getItem("pb_auth") || "{}").token; } catch { /* Invalid local session. */ }
+  try { token = JSON.parse(localStorage.getItem("pocketbase_auth") || "{}").token; } catch { /* Invalid local session. */ }
   if (!token) throw new Error("Войдите в Beszel по ссылке сверху, затем вернитесь сюда.");
   const response = await fetch(`api/${path}`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
   if (!response.ok) {

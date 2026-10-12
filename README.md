@@ -26,6 +26,15 @@ uv run --locked python scripts/check.py
 uv run --locked python scripts/check.py --audit
 ```
 
+Проверка типов также подключает группу `browser`; Chrome нужен только для отдельной
+проверки реального входа Beszel и перехода на страницу данных:
+
+```powershell
+uv run --locked --group browser python scripts/check_monitoring_browser.py --access-file .local/integration-secrets.json
+```
+
+JSON-файл содержит `monitoring_email` и `monitoring_password`, исключён из Git и не выводится в лог.
+
 Сайт доступен на `http://127.0.0.1:8080`. Настройки — в `.env.example`.
 Для полного стека скопируйте `.env.integration.example` в `.env.integration`, задайте секреты
 и выполните `uv run --locked python -m scripts.stack --dev up -d --build --wait`.
