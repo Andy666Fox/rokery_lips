@@ -4,8 +4,8 @@ services:
   app:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
-      - ./app:/app/app:ro
-      - ./html:/app/html:ro
+      - ./services/website/src:/app/services/website/src:ro
+      - ./services/website/html:/app/services/website/html:ro
   caddy:
     ports:
       - "${DEV_BIND:-127.0.0.1}:${DEV_PORT:-8080}:80"

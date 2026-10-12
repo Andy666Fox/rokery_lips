@@ -1,0 +1,10 @@
+profiles:
+  esp32:
+    fqbn: esp32:esp32:esp32
+    platforms:
+      - platform: esp32:esp32 (3.3.12)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - Adafruit ST7735 and ST7789 Library (1.11.0)
+      - Adafruit GFX Library (1.12.6)
+      - Adafruit BusIO (1.17.4)

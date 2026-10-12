@@ -1,0 +1,8 @@
+(observability) {
+    handle /monitoring {
+        redir /monitoring/ 308
+    }
+    handle_path /monitoring/* {
+        reverse_proxy beszel:8090
+    }
+}

@@ -1,0 +1,85 @@
+# Passwords live in the private .env.integration file. No monitoring port is public.
+services:
+  caddy:
+    volumes:
+      - ./deploy/caddy/observability.caddy:/etc/caddy/observability.caddy:ro
+
+  beszel:
+    image: henrygd/beszel:0.21.0@sha256:6b39a8b64f9b15d00a25e7683e31a93c46161182a54f62713525107064e10599
+    restart: unless-stopped
+    mem_limit: 160m
+    logging:
+      driver: local
+    environment:
+      APP_URL: https://${SITE_DOMAIN:-dedvnutri.space}/monitoring
+      USER_EMAIL: ${MONITORING_EMAIL:?Set MONITORING_EMAIL}
+      USER_PASSWORD: ${MONITORING_PASSWORD:?Set MONITORING_PASSWORD}
+      USER_CREATION: "false"
+      CHECK_UPDATES: "false"
+    ports: ["127.0.0.1:8090:8090"]
+    volumes:
+      - beszel_data:/beszel_data
+      - beszel_socket:/beszel_socket
+    healthcheck:
+      test: [CMD, /beszel, health, --url, "http://localhost:8090"]
+      interval: 120s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+      start_interval: 5s
+
+  docker-proxy:
+    image: lscr.io/linuxserver/socket-proxy@sha256:362cadf55b3c7920189347d0f4d60b389e2f80e929581bf10793f2371aab41e5
+    restart: unless-stopped
+    mem_limit: 48m
+    logging:
+      driver: local
+    environment:
+      CONTAINERS: "1"
+      POST: "0"
+    ports: ["127.0.0.1:2375:2375"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  beszel-agent:
+    image: henrygd/beszel-agent:0.21.0@sha256:f27b1aa2c68404bc5b9e1a2ab36653bd9b4ee14f6299862f09cd5051a4134767
+    restart: unless-stopped
+    mem_limit: 128m
+    logging:
+      driver: local
+    network_mode: host
+    environment:
+      LISTEN: /beszel_socket/beszel.sock
+      HUB_URL: http://127.0.0.1:8090
+      KEY: ${BESZEL_KEY:-}
+      TOKEN: ${BESZEL_TOKEN:-}
+      DOCKER_HOST: tcp://127.0.0.1:2375
+      SKIP_SYSTEMD: "true"
+      SKIP_SYSTEMD_LOGS: "true"
+      SKIP_GPU: "true"
+      SKIP_WIFI: "true"
+      FILESYSTEM: /host
+    volumes:
+      - beszel_socket:/beszel_socket
+      - beszel_agent_data:/var/lib/beszel-agent
+      - /:/host:ro,rslave
+    depends_on: [beszel, docker-proxy]
+
+  monitor-probes:
+    build:
+      context: .
+      dockerfile: services/monitoring/Dockerfile
+    restart: unless-stopped
+    mem_limit: 32m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: local
+    ports: ["127.0.0.1:8091:8091"]
+    volumes:
+      - /var/lib/synch-monitor:/monitor:ro
+
+volumes:
+  beszel_data:
+  beszel_socket:
+  beszel_agent_data:

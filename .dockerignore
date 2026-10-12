@@ -1,11 +1,9 @@
 *
 !pyproject.toml
 !uv.lock
-!app/
-!app/**
-!html/
-!html/**
-!data/
-!data/credits.csv
-app/**/__pycache__/
-app/**/*.pyc
+!services/
+!services/**
+services/**/__pycache__/
+services/**/*.pyc
+services/**/.env*
+services/**/tests/

@@ -1,0 +1,25 @@
+[Unit]
+Description=Host metrics for the synch ESP32 display
+After=local-fs.target
+
+[Service]
+Type=simple
+User=synch-monitor
+Group=synch-monitor
+ExecStart=/usr/bin/python3 /opt/synch-monitor/collector.py
+Restart=on-failure
+RestartSec=5
+StateDirectory=synch-monitor
+StateDirectoryMode=0755
+UMask=0022
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

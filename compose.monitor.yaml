@@ -1,0 +1,14 @@
+# Optional production overlay. Load .env.monitor explicitly; never print resolved secrets.
+services:
+  caddy:
+    environment:
+      WATCH_MONITOR_TOKEN: ${WATCH_MONITOR_TOKEN:?Set WATCH_MONITOR_TOKEN in .env.monitor}
+    volumes:
+      - ./deploy/caddy/Caddyfile.monitor:/etc/caddy/Caddyfile:ro
+      - ./deploy/caddy/monitor.caddy:/etc/caddy/monitor.caddy:ro
+      - type: bind
+        source: /var/lib/synch-monitor
+        target: /monitor
+        read_only: true
+        bind:
+          create_host_path: false

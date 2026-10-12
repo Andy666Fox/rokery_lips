@@ -3,19 +3,45 @@ name = "synchronisica"
 version = "0.4.0"
 requires-python = ">=3.13,<3.14"
 dependencies = [
-    "beautifulsoup4==4.15.0",
-    "fastapi==0.141.1",
-    "httpx[socks]==0.28.1",
-    "pydantic==2.13.5",
-    "uvicorn[standard]==0.52.4",
+    "synchronisica-website",
+    "random-telegram-bot",
+    "synchronisica-monitoring",
 ]
+
+[dependency-groups]
+browser = [
+    "playwright==1.63.0",
+]
+dev = ["ruff==0.16.10", "ty==0.0.85", "pytest==9.1.1", "pip-audit==2.10.1", "aiosqlite==0.22.1"]
 
 [tool.uv]
 package = false
 
+[tool.uv.workspace]
+members = ["services/*"]
+
+[tool.uv.sources]
+synchronisica-website = { workspace = true }
+random-telegram-bot = { workspace = true }
+synchronisica-monitoring = { workspace = true }
+
 [tool.ruff]
-line-length = 100
 target-version = "py313"
+line-length = 100
+extend-exclude = [".local", "esp_software"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ty.src]
+include = ["services", "tests", "scripts"]
+
+[tool.ty.rules]
+all = "error"
+
+[tool.ty.environment]
+python-platform = "linux"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "services/website/src", "services/monitoring/src", "services/random_telegram_bot/src"]

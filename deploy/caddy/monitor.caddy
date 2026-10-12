@@ -1,0 +1,14 @@
+(monitor) {
+	handle /monitor/status {
+		header Cache-Control "no-store"
+		@authorized header Authorization "Bearer {$WATCH_MONITOR_TOKEN}"
+		handle @authorized {
+			root * /monitor
+			rewrite * /status.json
+			file_server
+		}
+		handle {
+			respond "Unauthorized" 401
+		}
+	}
+}

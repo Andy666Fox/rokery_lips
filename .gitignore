@@ -1,62 +1,36 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-.Python
+.build/
+.tools/
 .venv/
-venv/
-env/
+__pycache__/
 .pytest_cache/
-.mypy_cache/
 .ruff_cache/
-.coverage
-.coverage.*
-htmlcov/
-coverage.xml
-junit.xml
-.tox/
-.nox/
-build/
-dist/
-*.egg-info/
-
-# Node
-node_modules/
-npm-debug.log*
-playwright-report/
-test-results/
-
-# Environment / secrets
 .env
+
+# Local credentials, deployment helpers, and generated artifacts.
+.local/
 .env.*
 !.env.example
+!.env.integration.example
+**/secrets.h
+**/monitor_secrets.h
+*.py[cod]
+.coverage
+htmlcov/
+test-results/
+playwright-report/
+node_modules/
 .ssh/
 *.pem
 *.key
 
-# Docker
-docker-compose.override.yml
-
-# Editors / IDE
-.vscode/
+# Tool output and editor metadata.
+build/
+dist/
+*.egg-info/
+.mypy_cache/
 .idea/
-*.swp
-*.swo
-*~
-*.bak
+.vscode/
+*.log
 *.tmp
-
-# OS
 .DS_Store
 Thumbs.db
-desktop.ini
-
-# Logs
-*.log
-.local/
-
-# Local deployment records and backups; keep maintained docs and checks in Git.
-/DEPLOYMENT_STATUS.md
-/PROJECT_STATUS_*.md
-/backups/
-/release*.tar.gz

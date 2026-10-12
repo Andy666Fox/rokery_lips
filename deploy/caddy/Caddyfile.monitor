@@ -1,0 +1,14 @@
+import common.caddy
+import monitor.caddy
+import observability.caddy
+
+www.{$SITE_DOMAIN:dedvnutri.space} {
+	redir https://{$SITE_DOMAIN:dedvnutri.space}{uri} permanent
+}
+
+{$SITE_DOMAIN:dedvnutri.space} {
+	import common
+	import monitor
+	import observability
+	header Strict-Transport-Security "max-age=31536000"
+}
