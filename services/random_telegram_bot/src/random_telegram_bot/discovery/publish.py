@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from random_telegram_bot.catalogue import normalize_channel
 from random_telegram_bot.models import Channel, DiscoveredChannel
+from random_telegram_bot.suggestions import confirm_channel
 
 
 def reviewed(
@@ -89,6 +90,7 @@ async def promote(
                         added_at=datetime.fromtimestamp(now, UTC).replace(tzinfo=None),
                     )
                     db.add(channel)
+                    confirm_channel(channel, datetime.fromtimestamp(now, UTC))
                     await db.flush()
                     db.add(
                         DiscoveredChannel(

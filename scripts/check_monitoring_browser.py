@@ -1,4 +1,4 @@
-"""Verify native Beszel login and the shared operations session in real Chrome.
+"""Verify native Beszel login and container monitoring in real Chrome.
 
 Run with uv run --locked --group browser python scripts/check_monitoring_browser.py
 --access-file .local/integration-secrets.json. Credentials are never printed.
@@ -33,10 +33,6 @@ async def verify(base: str, access: Path) -> None:
                 errors.append(str(error))
 
             page.on("pageerror", record_error)
-            await page.goto(base + "/monitoring/operations/", wait_until="networkidle")
-            await page.wait_for_function("!document.querySelector('#refresh').disabled")
-            assert not await page.locator("main").is_visible(), "Anonymous data exposure"
-
             # Use the real form; a synthetic localStorage token can hide integration bugs.
             await page.goto(base + "/monitoring/", wait_until="networkidle")
             await page.locator("input[name=email]").fill(credentials["monitoring_email"])
@@ -47,23 +43,12 @@ async def verify(base: str, access: Path) -> None:
             await page.goto(base + "/monitoring/containers", wait_until="networkidle")
             assert await page.locator("tbody tr").count() > 0, "Beszel containers missing"
 
-            await page.goto(base + "/monitoring/operations/", wait_until="networkidle")
-            await page.wait_for_function("!document.querySelector('#refresh').disabled")
-            assert await page.locator("main").is_visible(), "Shared Beszel session failed"
-            for table in ("channels", "users"):
-                assert 0 < await page.locator(f"#{table} tbody tr").count() <= 10
-            logs = page.locator("#logs article pre")
-            assert await logs.count() > 0
-            for content in await logs.all_text_contents():
-                assert content != "Logs temporarily unavailable", "Docker log access failed"
-                assert len(content.splitlines()) <= 10
-            assert await page.locator("#schema").evaluate(
-                "img => img.complete && img.naturalWidth > 0"
-            ), "ER image missing"
-            await page.set_viewport_size({"width": 390, "height": 844})
-            assert await page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+            # The retired extension must not expose operational data through old URLs.
+            for resource in ("database", "schema/svg", "logs"):
+                response = await page.request.get(base + "/monitoring/operations/api/" + resource)
+                assert response.status == 404, "Retired operations API is still available"
             assert not errors, "Browser JavaScript error: " + " | ".join(errors)
-            print("Native Beszel login, shared session, previews, ER, logs and mobile layout: OK")
+            print("Native Beszel login, container monitoring and retired API: OK")
         finally:
             await browser.close()
 

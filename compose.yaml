@@ -83,6 +83,7 @@ services:
       DATABASE_URL: mysql+aiomysql://random_bot:${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}@mysql:3306/random_bot
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:?Set WEBHOOK_SECRET}
       BOT_TOKEN: ${BOT_TOKEN:-}
+      ADMIN_TELEGRAM_ID: ${ADMIN_TELEGRAM_ID:-0}
     depends_on:
       mysql:
         condition: service_healthy

@@ -1,17 +1,22 @@
 """Uniform selection over active channels; no scraping on the request path."""
 
 import asyncio
+import logging
+import math
 import re
 import secrets
 import time
 from array import array
+from contextlib import suppress
 
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from random_telegram_bot.models import Channel
 
 USERNAME = re.compile(r"[A-Za-z][A-Za-z0-9_]{4,31}")
+logger = logging.getLogger(__name__)
 
 
 def normalize_channel(value: str) -> str:
@@ -24,44 +29,90 @@ def normalize_channel(value: str) -> str:
 
 class Catalogue:
     def __init__(self, sessions: async_sessionmaker[AsyncSession], ttl: float = 30) -> None:
+        if not math.isfinite(ttl) or ttl <= 0:
+            raise ValueError("Catalogue refresh interval must be finite and positive")
         self.sessions = sessions
         self.ttl = ttl
-        self._expires = 0.0
         # Eight bytes per ID; retaining ORM rows/usernames for a large catalogue
         # can exhaust the bot's memory while refreshing the cache.
         self._channels: array[int] = array("q")
         self._lock = asyncio.Lock()
+        self._wake = asyncio.Event()
+        self._task: asyncio.Task[None] | None = None
+
+    @property
+    def running(self) -> bool:
+        return self._task is not None and not self._task.done()
+
+    async def start(self) -> None:
+        """Warm the snapshot before accepting requests, then refresh it in the background."""
+        async with self._lock:
+            if self._task is None:
+                await self._refresh()
+                self._wake.clear()
+                self._task = asyncio.create_task(self._run(), name="catalogue-refresh")
+
+    async def stop(self) -> None:
+        if self._task is not None:
+            self._task.cancel()
+            await asyncio.gather(self._task, return_exceptions=True)
+            self._task = None
 
     async def _refresh(self) -> None:
-        if time.monotonic() >= self._expires:
-            async with self._lock:
-                if time.monotonic() >= self._expires:
-                    async with self.sessions() as db:
-                        rows = await db.stream(
-                            select(Channel.channel_id, Channel.channelnick)
-                            .where(Channel.status.is_(True))
-                            .execution_options(yield_per=1000)
-                        )
-                        valid: array[int] = array("q")
+        valid: array[int] = array("q")
+        async with self.sessions() as db:
+            rows = await db.stream(
+                select(Channel.channel_id, Channel.channelnick)
+                .where(Channel.status.is_(True))
+                .execution_options(yield_per=1000)
+            )
+            try:
+                async for batch in rows.partitions(1000):
+                    for channel_id, username in batch:
                         try:
-                            async for channel_id, username in rows:
-                                try:
-                                    normalize_channel(username)
-                                except ValueError:
-                                    continue
-                                valid.append(channel_id)
-                        finally:
-                            await rows.close()
-                    self._channels = valid
-                    self._expires = time.monotonic() + self.ttl
+                            normalize_channel(username)
+                        except ValueError:
+                            continue
+                        valid.append(channel_id)
+                    # Parsing a large snapshot must leave time for webhook/API requests.
+                    await asyncio.sleep(0)
+            finally:
+                await rows.close()
+        # Cancellation or a DB error leaves the previous complete snapshot intact.
+        self._channels = valid
+
+    async def _run(self) -> None:
+        delay = self.ttl
+        try:
+            while True:
+                with suppress(TimeoutError):
+                    await asyncio.wait_for(self._wake.wait(), timeout=delay)
+                self._wake.clear()
+                try:
+                    await self._refresh()
+                except SQLAlchemyError as error:
+                    delay = min(5.0, self.ttl)
+                    logger.warning(
+                        "Catalogue refresh failed: %s; keeping snapshot and retrying in %.2fs",
+                        type(error).__name__,
+                        delay,
+                    )
+                else:
+                    delay = self.ttl
+        except Exception as error:
+            logger.error("Catalogue refresh stopped: %s", type(error).__name__)
+            raise
 
     async def choose(self) -> tuple[int, str] | None:
+        # Standalone callers can initialize lazily; the application's lifespan prewarms.
+        if self._task is None:
+            await self.start()
         # Recheck status so a retired channel is not served from a warm cache.
         for _ in range(2):
-            await self._refresh()
-            if not self._channels:
+            snapshot = self._channels
+            if not snapshot:
                 return None
-            identifier = secrets.choice(self._channels)
+            identifier = secrets.choice(snapshot)
             async with self.sessions() as db:
                 username = await db.scalar(
                     select(Channel.channelnick).where(
@@ -73,7 +124,10 @@ class Catalogue:
                     return identifier, normalize_channel(username)
                 except ValueError:
                     pass
-            self._expires = 0
+            # Concurrent lookups may retire the same ID. Never rebuild in a request.
+            with suppress(ValueError):
+                snapshot.remove(identifier)
+            self._wake.set()
         return None
 
 

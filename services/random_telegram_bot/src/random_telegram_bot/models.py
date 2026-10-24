@@ -1,5 +1,6 @@
 """Database contracts, including the original table names for data migration."""
 
+import secrets
 import time
 from datetime import datetime
 from typing import cast
@@ -67,6 +68,9 @@ class Channel(Base):
     last_checked_at: Mapped[datetime | None] = cast(
         "Mapped[datetime | None]", mapped_column(DateTime)
     )
+    confirmed_at: Mapped[datetime | None] = cast(
+        "Mapped[datetime | None]", mapped_column(DateTime, index=True)
+    )
 
 
 class Rating(Base):
@@ -80,12 +84,16 @@ class ChannelCheck(Base):
     """Persistent, independently scheduled checks for CSV imports."""
 
     __tablename__ = "channel_checks"
-    __table_args__ = (Index("ix_channel_checks_due", "next_check_at", "channel_id"),)
+    __table_args__ = (Index("ix_channel_checks_due", "next_check_at", "queue_order", "channel_id"),)
     channel_id: Mapped[int] = cast(
         "Mapped[int]", mapped_column(ID, ForeignKey("channels.channel_id"), primary_key=True)
     )
     state: Mapped[str] = cast("Mapped[str]", mapped_column(String(16), default="pending"))
     next_check_at: Mapped[float] = cast("Mapped[float]", mapped_column(Float, default=0))
+    queue_order: Mapped[int] = cast(
+        "Mapped[int]",
+        mapped_column(BigInteger, default=lambda: secrets.randbits(53), server_default="0"),
+    )
     attempts: Mapped[int] = cast("Mapped[int]", mapped_column(default=0))
     last_error: Mapped[str | None] = cast("Mapped[str | None]", mapped_column(String(64)))
     import_sha256: Mapped[str] = cast("Mapped[str]", mapped_column(String(64)))
@@ -127,7 +135,9 @@ class Inbox(Base):
     update_id: Mapped[int] = cast("Mapped[int]", mapped_column(BigInteger, unique=True))
     chat_id: Mapped[int] = cast("Mapped[int]", mapped_column(BigInteger))
     payload: Mapped[dict[str, object]] = cast("Mapped[dict[str, object]]", mapped_column(JSON))
-    received_at: Mapped[float] = cast("Mapped[float]", mapped_column(Float, default=time.time))
+    received_at: Mapped[float] = cast(
+        "Mapped[float]", mapped_column(Float, default=time.time, index=True)
+    )
     state: Mapped[str] = cast("Mapped[str]", mapped_column(String(16), default="pending"))
     attempts: Mapped[int] = cast("Mapped[int]", mapped_column(default=0))
     next_attempt_at: Mapped[float] = cast("Mapped[float]", mapped_column(Float, default=0))
@@ -146,3 +156,13 @@ class ImportReceipt(Base):
     __tablename__ = "legacy_imports"
     sha256: Mapped[str] = cast("Mapped[str]", mapped_column(String(64), primary_key=True))
     completed_at: Mapped[datetime] = cast("Mapped[datetime]", mapped_column(DateTime))
+
+
+class MessageDelivery(Base):
+    """Successful sendMessage calls, without storing message text or recipients."""
+
+    __tablename__ = "message_deliveries"
+    id: Mapped[int] = cast("Mapped[int]", mapped_column(ID, primary_key=True, autoincrement=True))
+    delivered_at: Mapped[float] = cast(
+        "Mapped[float]", mapped_column(Float, default=time.time, index=True)
+    )

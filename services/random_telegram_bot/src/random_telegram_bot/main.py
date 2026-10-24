@@ -21,7 +21,6 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from random_telegram_bot.catalogue import Catalogue, RateLimiter
 from random_telegram_bot.config import Settings
 from random_telegram_bot.models import Inbox
-from random_telegram_bot.operations import router as operations_router
 from random_telegram_bot.queue import Workers, deliver
 from random_telegram_bot.suggestions import ChannelValidator
 
@@ -44,6 +43,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 partial(deliver, bot),
                 config.workers,
                 check_channel=ChannelValidator(web_client).verify,
+                admin_telegram_id=config.admin_telegram_id,
             )
             if bot
             else None
@@ -54,13 +54,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         application.state.limiter = RateLimiter()
         application.state.workers = workers
         application.state.web_client = web_client
-        if workers:
-            workers.start()
         try:
+            await catalogue.start()
+            if workers:
+                workers.start()
             yield
         finally:
             if workers:
                 await workers.stop()
+            await catalogue.stop()
             if bot:
                 await bot.session.close()
             await web_client.aclose()
@@ -69,7 +71,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application = FastAPI(
         title="Random Telegram channel", lifespan=lifespan, docs_url=None, redoc_url=None
     )
-    application.include_router(operations_router)
 
     @application.get("/health/live")
     async def live() -> dict[str, str]:
@@ -87,6 +88,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @application.get("/health/ready")
     async def ready(request: Request) -> dict[str, str]:
         await database(request)
+        if not request.app.state.catalogue.running:
+            raise HTTPException(503, "catalogue_not_ready")
         workers = request.app.state.workers
         if not workers or any(task.done() for task in workers.tasks):
             raise HTTPException(503, "bot_not_configured")

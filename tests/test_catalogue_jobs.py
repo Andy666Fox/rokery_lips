@@ -37,6 +37,13 @@ def test_import_resume_and_verification(tmp_path: Path) -> None:
             result = await import_csv(engine, path)
             assert result["inserted_inactive"] == 3
             assert (await import_csv(engine, path))["inserted_inactive"] == 0
+            # Keep this outcome/cooldown scenario independent of random queue order.
+            async with sessions.begin() as db:
+                entries = list(await db.scalars(select(ChannelCheck)))
+                assert len({entry.queue_order for entry in entries}) == 3
+                assert all(0 <= entry.queue_order < 2**53 for entry in entries)
+                for entry in entries:
+                    entry.queue_order = entry.channel_id
             async with sessions() as db:
                 assert await db.scalar(select(func.count()).select_from(ChannelCheck)) == 3
                 assert (

@@ -1,10 +1,5 @@
 # Passwords live in the private .env.integration file. No monitoring port is public.
 services:
-  bot:
-    environment:
-      BESZEL_URL: http://beszel:8090
-      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-synchronisica-prod}
-
   catalogue-checker:
     build:
       context: .

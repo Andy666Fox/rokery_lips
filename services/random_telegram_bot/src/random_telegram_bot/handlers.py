@@ -6,6 +6,7 @@ from typing import Any
 from aiogram.types import Update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from random_telegram_bot.admin_info import info_text
 from random_telegram_bot.catalogue import Catalogue, normalize_channel
 from random_telegram_bot.models import Channel, Rating, User
 from random_telegram_bot.suggestions import CheckChannel, accept_suggestion
@@ -17,6 +18,8 @@ async def prepare_actions(
     db: AsyncSession,
     catalogue: Catalogue,
     check_channel: CheckChannel | None = None,
+    *,
+    admin_telegram_id: int = 0,
 ) -> list[dict[str, Any]]:
     message = update.message
     callback = update.callback_query
@@ -80,7 +83,16 @@ async def prepare_actions(
     text = (message.text or "").strip()
     command = text.split(" ", 1)[0].split("@", 1)[0]
     keyboard = {"keyboard": [[{"text": "Найти канал"}]], "resize_keyboard": True}
-    if command in {"/start", "/help"}:
+    if command == "/info":
+        if (
+            not admin_telegram_id
+            or sender.id != admin_telegram_id
+            or message.chat.type != "private"
+        ):
+            response = "Команда доступна только администратору в личной переписке с ботом."
+        else:
+            response = await info_text(db)
+    elif command in {"/start", "/help"}:
         user.awaiting_suggestion = False
         response = "Нажмите «Найти канал» или /random. Предложить канал: /suggest @username."
     elif command == "/extra":

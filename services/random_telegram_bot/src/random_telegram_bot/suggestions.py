@@ -120,7 +120,6 @@ async def accept_suggestion(
         if canonical.status:
             response = "Этот канал уже есть в каталоге."
         else:
-            canonical.status = True
             response = "Канал проверен и подтверждён в каталоге. Спасибо!"
     else:
         canonical = Channel(channelnick=verified.username, status=True, added_at=datetime.now(UTC))
@@ -134,6 +133,7 @@ async def accept_suggestion(
 
 def apply_verification(channel: Channel, verified: VerifiedChannel) -> None:
     """One owner for UTC storage and Telegram preview metadata."""
+    confirm_channel(channel, verified.checked_at)
     channel.subscriber_count = verified.subscriber_count
     channel.subscriber_display = verified.subscriber_display
     channel.last_post_at = (
@@ -142,3 +142,10 @@ def apply_verification(channel: Channel, verified: VerifiedChannel) -> None:
         else None
     )
     channel.last_checked_at = verified.checked_at.astimezone(UTC).replace(tzinfo=None)
+
+
+def confirm_channel(channel: Channel, checked_at: datetime) -> None:
+    """Record the first confirmation once, across all channel sources."""
+    channel.status = True
+    if channel.confirmed_at is None:
+        channel.confirmed_at = checked_at.astimezone(UTC).replace(tzinfo=None)

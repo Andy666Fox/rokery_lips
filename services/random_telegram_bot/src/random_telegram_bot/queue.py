@@ -22,7 +22,7 @@ from sqlalchemy.orm import aliased
 
 from random_telegram_bot.catalogue import Catalogue
 from random_telegram_bot.handlers import prepare_actions
-from random_telegram_bot.models import Inbox
+from random_telegram_bot.models import Inbox, MessageDelivery
 from random_telegram_bot.suggestions import CheckChannel
 
 logger = logging.getLogger(__name__)
@@ -94,12 +94,14 @@ class Workers:
         count: int = 4,
         *,
         check_channel: CheckChannel | None = None,
+        admin_telegram_id: int = 0,
     ) -> None:
         self.sessions = sessions
         self.catalogue = catalogue
         self.sender = sender
         self.count = count
         self.check_channel = check_channel
+        self.admin_telegram_id = admin_telegram_id
         self.wake = asyncio.Event()
         self.tasks: list[asyncio.Task[None]] = []
 
@@ -120,12 +122,20 @@ class Workers:
             assert row is not None
             if row.actions is None:
                 row.actions = await prepare_actions(
-                    Update.model_validate(row.payload), db, self.catalogue, self.check_channel
+                    Update.model_validate(row.payload),
+                    db,
+                    self.catalogue,
+                    self.check_channel,
+                    admin_telegram_id=self.admin_telegram_id,
                 )
             assert row.actions is not None
             actions = list(row.actions)
         for action in actions:
             await self.sender(action)
+            if action["method"] == "sendMessage":
+                # Record only successful sends, including actual repeats after a retry.
+                async with self.sessions.begin() as db:
+                    db.add(MessageDelivery())
         async with self.sessions.begin() as db:
             row = await db.get(Inbox, sequence, with_for_update=True)
             assert row is not None
@@ -169,6 +179,11 @@ class Workers:
                             delete(Inbox).where(
                                 Inbox.state == "done",
                                 Inbox.completed_at < time.time() - 7 * 86400,
+                            )
+                        )
+                        await db.execute(
+                            delete(MessageDelivery).where(
+                                MessageDelivery.delivered_at < time.time() - 7 * 86400
                             )
                         )
                     next_cleanup = time.monotonic() + 3600

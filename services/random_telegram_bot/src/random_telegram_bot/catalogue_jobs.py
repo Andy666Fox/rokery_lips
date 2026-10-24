@@ -198,7 +198,11 @@ async def verify_batch(
                 await db.scalars(
                     select(ChannelCheck.channel_id)
                     .where(ChannelCheck.next_check_at <= time.time())
-                    .order_by(ChannelCheck.next_check_at, ChannelCheck.channel_id)
+                    .order_by(
+                        ChannelCheck.next_check_at,
+                        ChannelCheck.queue_order,
+                        ChannelCheck.channel_id,
+                    )
                     .limit(limit)
                 )
             )
@@ -229,7 +233,6 @@ async def verify_batch(
                 entry.state = outcome
                 entry.attempts += 1
                 if outcome == "valid":
-                    channel.status = True
                     assert verified is not None
                     apply_verification(channel, verified)
                 elif outcome == "invalid":
