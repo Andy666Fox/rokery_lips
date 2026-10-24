@@ -28,6 +28,7 @@ from sqlalchemy.ext.asyncio import (
 
 from random_telegram_bot.catalogue import normalize_channel
 from random_telegram_bot.models import Channel, ChannelCheck, VerificationControl
+from random_telegram_bot.moderation import RECHECK_SECONDS
 from random_telegram_bot.suggestions import (
     ChannelValidator,
     CheckChannel,
@@ -35,6 +36,7 @@ from random_telegram_bot.suggestions import (
     ValidationUnavailable,
     apply_verification,
 )
+from random_telegram_bot.verification_queue import enqueue_untracked
 
 
 @asynccontextmanager
@@ -216,12 +218,14 @@ async def verify_batch(
                 name = normalize_channel(channel.channelnick)
             outcome = "valid"
             stop = False
-            retry_after = 30 * 86400  # Successful and invalid entries are periodically refreshed.
+            retry_after = RECHECK_SECONDS
+            rejection_reason = None
             verified = None
             try:
                 verified = await check(name)
-            except InvalidChannel:
+            except InvalidChannel as error:
                 outcome = "invalid"
+                rejection_reason = error.reason
             except ValidationUnavailable as error:
                 outcome, stop = "deferred", error.stop
                 retry_after = max(300, error.retry_after)
@@ -243,7 +247,9 @@ async def verify_batch(
                         retry_after, min(86400, 300 * 2 ** min(entry.attempts - 1, 8))
                     )
                 entry.next_check_at = time.time() + retry_after
-                entry.last_error = "temporary_telegram_failure" if outcome == "deferred" else None
+                entry.last_error = (
+                    "temporary_telegram_failure" if outcome == "deferred" else rejection_reason
+                )
                 if stop:
                     control = await db.get(VerificationControl, "telegram_web")
                     if control is None:
@@ -281,6 +287,7 @@ async def main() -> None:
         if args.command == "import":
             print(json.dumps(await import_csv(engine, args.csv)), flush=True)
         else:
+            print(json.dumps({"queued_untracked": await enqueue_untracked(engine)}), flush=True)
             async with httpx.AsyncClient() as client:
                 validator = ChannelValidator(client)
                 while True:

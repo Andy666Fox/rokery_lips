@@ -1,12 +1,15 @@
 """Observe discovery candidates through the shared Telegram HTTP and parser contracts."""
 
+import asyncio
 import json
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
 
 from random_telegram_bot.catalogue import normalize_channel
+from random_telegram_bot.moderation import POLICY_VERSION, InvalidChannel, check_preview
 from random_telegram_bot.telegram_web import Deferred, TelegramHTTP, parse_preview
 
 
@@ -114,4 +117,10 @@ class Reader(TelegramHTTP):
             )
             if state == "preview_ready":
                 state = "web_ready"
+        try:
+            await asyncio.to_thread(check_preview, preview, datetime.fromtimestamp(now, UTC))
+        except InvalidChannel as error:
+            metadata["moderation_reason"] = error.reason
+            return Observation("moderation_rejected", metadata)
+        metadata["moderation_version"] = POLICY_VERSION
         return Observation(state, metadata)

@@ -5,14 +5,16 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from random_telegram_bot.messages import message
 from random_telegram_bot.models import Channel, Inbox, MessageDelivery, User
 
 
 async def info_text(db: AsyncSession, *, now: datetime | None = None) -> str:
     now = (now or datetime.now(UTC)).astimezone(UTC)
+    active_days, message_hours = 14, 24
     until = now.replace(tzinfo=None)
-    day = until - timedelta(days=1)
-    fortnight = until - timedelta(days=14)
+    day = until - timedelta(hours=message_hours)
+    fortnight = until - timedelta(days=active_days)
     epoch = now.timestamp()
 
     # A single statement gives all counters the same database snapshot.
@@ -31,7 +33,7 @@ async def info_text(db: AsyncSession, *, now: datetime | None = None) -> str:
         select(func.count())
         .select_from(Inbox)
         .where(
-            Inbox.received_at >= epoch - 86400,
+            Inbox.received_at >= epoch - message_hours * 3600,
             Inbox.received_at <= epoch,
             Inbox.payload["message"]["message_id"].as_integer().is_not(None),
         )
@@ -41,7 +43,7 @@ async def info_text(db: AsyncSession, *, now: datetime | None = None) -> str:
         select(func.count())
         .select_from(MessageDelivery)
         .where(
-            MessageDelivery.delivered_at >= epoch - 86400,
+            MessageDelivery.delivered_at >= epoch - message_hours * 3600,
             MessageDelivery.delivered_at <= epoch,
         )
         .scalar_subquery()
@@ -74,12 +76,17 @@ async def info_text(db: AsyncSession, *, now: datetime | None = None) -> str:
         )
     ).one()
     channels, valid, users, active, received, sent, new, approved = row
-    return (
-        "Статистика бота\n"
-        f"1) Каналы: {channels} всего / {valid} подтверждено\n"
-        f"2) Пользователи: {users} всего / {active} активны за 14 дней\n"
-        f"3) Сообщения за 24 часа: {received + sent} "
-        f"(входящие: {received}, исходящие: {sent})\n"
-        f"4) Добавлено каналов за 24 часа: {new}\n"
-        f"5) Впервые подтверждено за 24 часа: {approved}"
+    return message(
+        "admin_info",
+        channels=channels,
+        confirmed=valid,
+        users=users,
+        active=active,
+        active_days=active_days,
+        message_hours=message_hours,
+        messages=received + sent,
+        received=received,
+        sent=sent,
+        added=new,
+        approved=approved,
     )

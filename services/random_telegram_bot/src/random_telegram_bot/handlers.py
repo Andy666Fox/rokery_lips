@@ -8,7 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from random_telegram_bot.admin_info import info_text
 from random_telegram_bot.catalogue import Catalogue, normalize_channel
+from random_telegram_bot.messages import message as reply
 from random_telegram_bot.models import Channel, Rating, User
+from random_telegram_bot.moderation import criteria_text
 from random_telegram_bot.suggestions import CheckChannel, accept_suggestion
 from random_telegram_bot.telegram_web import public_username
 
@@ -36,7 +38,7 @@ async def prepare_actions(
     user.last_online = datetime.now(UTC)
     if callback:
         parts = (callback.data or "").split(":")
-        text = "Оценка не распознана"
+        text = reply("rating_unknown")
         rated = False
         if (
             len(parts) == 3
@@ -58,7 +60,7 @@ async def prepare_actions(
                     )
                 channel.likes += int(score == 1)
                 channel.dislikes += int(score == -1)
-                text = "Спасибо за оценку!"
+                text = reply("rating_thanks")
                 rated = True
         actions: list[dict[str, Any]] = []
         if rated:
@@ -82,42 +84,43 @@ async def prepare_actions(
         return []
     text = (message.text or "").strip()
     command = text.split(" ", 1)[0].split("@", 1)[0]
-    keyboard = {"keyboard": [[{"text": "Найти канал"}]], "resize_keyboard": True}
+    find_button = reply("find_button")
+    keyboard = {"keyboard": [[{"text": find_button}]], "resize_keyboard": True}
     if command == "/info":
         if (
             not admin_telegram_id
             or sender.id != admin_telegram_id
             or message.chat.type != "private"
         ):
-            response = "Команда доступна только администратору в личной переписке с ботом."
+            response = reply("admin_only")
         else:
             response = await info_text(db)
     elif command in {"/start", "/help"}:
         user.awaiting_suggestion = False
-        response = "Нажмите «Найти канал» или /random. Предложить канал: /suggest @username."
+        response = reply("start", find_button=find_button)
+        if command == "/help":
+            response = reply("help", criteria=criteria_text())
     elif command == "/extra":
-        response = (
-            f"Просмотрено каналов: {user.viewed_channels}. Предложено: {user.suggested_channels}."
-        )
+        response = reply("extra", viewed=user.viewed_channels, suggested=user.suggested_channels)
     elif command == "/cancel":
         user.awaiting_suggestion = False
-        response = "Действие отменено."
+        response = reply("cancel")
     elif command == "/suggest" or user.awaiting_suggestion:
         candidate = text.partition(" ")[2] if command == "/suggest" else text
         if not candidate:
             user.awaiting_suggestion = True
-            response = "Отправьте @username или https://t.me/username. Отмена: /cancel."
+            response = reply("suggest_prompt")
         else:
             try:
                 name = public_username(candidate) or normalize_channel(candidate)
             except ValueError:
-                response = "Нужна ссылка на публичный канал или @username. Отмена: /cancel."
+                response = reply("suggest_bad_address")
             else:
                 response = await accept_suggestion(db, user, name, check_channel)
-    elif command == "/random" or text == "Найти канал":
+    elif command == "/random" or text == find_button:
         chosen = await catalogue.choose()
         if chosen is None:
-            response = "Каталог пока пуст. Предложить канал: /suggest @username."
+            response = reply("catalogue_empty")
         else:
             channel_id, name = chosen
             user.last_channel_id = channel_id
@@ -126,20 +129,26 @@ async def prepare_actions(
                 {
                     "method": "sendMessage",
                     "chat_id": message.chat.id,
-                    "text": f"Случайный канал: https://t.me/{name}",
+                    "text": reply("random_channel", username=name),
                     "link_preview_options": {"is_disabled": True},
                     "reply_markup": {
                         "inline_keyboard": [
                             [
-                                {"text": "👍", "callback_data": f"rate:{channel_id}:1"},
-                                {"text": "👎", "callback_data": f"rate:{channel_id}:-1"},
+                                {
+                                    "text": reply("like_button"),
+                                    "callback_data": f"rate:{channel_id}:1",
+                                },
+                                {
+                                    "text": reply("dislike_button"),
+                                    "callback_data": f"rate:{channel_id}:-1",
+                                },
                             ]
                         ]
                     },
                 }
             ]
     else:
-        response = "Выдать случайный канал: /random. Справка: /help."
+        response = reply("unknown_command")
     return [
         {
             "method": "sendMessage",

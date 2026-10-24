@@ -56,6 +56,12 @@ def public_username(value: str) -> str | None:
 
 
 @dataclass(slots=True)
+class PreviewPost:
+    identifier: int
+    text: str = ""
+
+
+@dataclass(slots=True)
 class Preview:
     dates: list[float] = field(default_factory=list)
     links: set[str] = field(default_factory=set)
@@ -67,6 +73,7 @@ class Preview:
     subscriber_label: bool = False
     subscriber_display: str = ""
     subscriber_count: int | None = None
+    posts: list[PreviewPost] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -78,6 +85,7 @@ class Frame:
     counter_type: bool = False
     counter_value: bool = False
     counter_root: bool = False
+    post: PreviewPost | None = None
 
 
 class PreviewParser(HTMLParser):
@@ -106,6 +114,7 @@ class PreviewParser(HTMLParser):
         classes = (attr.get("class") or "").split()
         own_post = (attr.get("data-post") or "").split("/")
         message = parent_message
+        post = parent.post if parent else None
         if "tgme_widget_message" in classes:
             message = (
                 len(own_post) == 2
@@ -115,6 +124,8 @@ class PreviewParser(HTMLParser):
             )
             if message:
                 self.preview.post_count += 1
+                post = PreviewPost(int(own_post[1]))
+                self.preview.posts.append(post)
                 raw_view = attr.get("data-view") or ""
                 if raw_view and len(raw_view) < 1024:
                     try:
@@ -147,6 +158,8 @@ class PreviewParser(HTMLParser):
             self.preview.links.add(name)
         if tag in {"br", "hr"} and text:
             self.text.append("\n")
+            if post is not None:
+                post.text = (post.text + "\n")[:4000]
         if tag not in {
             "area",
             "base",
@@ -178,6 +191,7 @@ class PreviewParser(HTMLParser):
                     info and ("counter_type" in classes or bool(parent and parent.counter_type)),
                     info and ("counter_value" in classes or bool(parent and parent.counter_value)),
                     root,
+                    post if message else None,
                 )
             )
 
@@ -191,7 +205,7 @@ class PreviewParser(HTMLParser):
                         display = "".join(self.counter_value).strip()
                         self.preview.subscriber_label = True
                         self.preview.subscriber_display = display
-                        # Rounded K/M values cannot establish the <=1000 preference.
+                        # Rounded K/M values do not establish an exact audience size.
                         exact = re.fullmatch(
                             r"[0-9]+|[0-9]{1,3}(?:[ \u00a0\u202f,][0-9]{3})+", display
                         )
@@ -206,6 +220,8 @@ class PreviewParser(HTMLParser):
     def handle_data(self, data: str) -> None:
         if self.stack and self.stack[-1].text:
             self.text.append(data)
+            if (post := self.stack[-1].post) is not None:
+                post.text = (post.text + data + " ")[:4000]
         if self.stack and self.stack[-1].counter_type:
             self.counter_type.append(data)
         if self.stack and self.stack[-1].counter_value:

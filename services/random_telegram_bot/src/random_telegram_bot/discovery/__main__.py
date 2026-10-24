@@ -237,27 +237,46 @@ async def publish_candidates(store: Store, args: argparse.Namespace) -> None:
                             "type": observation.metadata.get("type"),
                             "username": observation.metadata.get("username"),
                         }
-                        if observation.state != "web_ready":
-                            chat["id"] = None
                     else:
-                        chat = await reader.chat(row["username"])
+                        observation = await reader.observe(
+                            row["username"],
+                            now=time.time(),
+                            max_age_days=metadata.get("max_age_days", 90),
+                        )
+                        chat = observation.metadata
+                        chat["id"] = chat.get("telegram_id")
                 except Deferred as error:
                     if error.stop:
                         store.defer_all(time.time() + error.retry_after, error.scope)
                     raise
+                if observation.state not in {"ready", "web_ready"}:
+                    store.record(
+                        row["username"],
+                        observation.state,
+                        observation.metadata,
+                        now=time.time(),
+                        retry_after=86400,
+                    )
+                    raise ValueError(
+                        f"Candidate failed its current check: {row['username']}; "
+                        "scan and review again"
+                    )
                 if (
-                    chat["id"] != metadata["telegram_id"]
+                    chat.get("id") != metadata["telegram_id"]
                     or chat["type"] != "channel"
                     or str(chat.get("username", "")).lower() != metadata["username"]
                 ):
                     store.record(
                         row["username"],
                         "identity_mismatch",
-                        {"telegram_id": chat["id"]},
+                        {"telegram_id": chat.get("id")},
                         now=time.time(),
                         retry_after=0,
                     )
                     raise ValueError(f"Identity changed: {row['username']}; scan and review again")
+                # Publish fresh moderation evidence, not the older review snapshot.
+                row["metadata"].update(observation.metadata)
+                row["checked_at"] = time.time()
     try:
         engine = create_async_engine(url, pool_pre_ping=True)
     except SQLAlchemyError as error:

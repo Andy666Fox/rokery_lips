@@ -9,7 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from random_telegram_bot.catalogue import normalize_channel
 from random_telegram_bot.models import Channel, DiscoveredChannel
-from random_telegram_bot.suggestions import confirm_channel
+from random_telegram_bot.moderation import POLICY_VERSION
+from random_telegram_bot.suggestions import VerifiedChannel, apply_verification
+from random_telegram_bot.verification_queue import record_check
 
 
 def reviewed(
@@ -25,6 +27,7 @@ def reviewed(
         and now - 86400 <= row["checked_at"] <= now + 300
         and row["metadata"].get("type") == "channel"
         and row["metadata"].get("identity_verified") is True
+        and row["metadata"].get("moderation_version") == POLICY_VERSION
         and row["metadata"].get("identity_source")
         == ("web_preview" if row["state"] == "web_ready" else "bot_api")
         and isinstance(row["metadata"].get("telegram_id"), int)
@@ -90,8 +93,19 @@ async def promote(
                         added_at=datetime.fromtimestamp(now, UTC).replace(tzinfo=None),
                     )
                     db.add(channel)
-                    confirm_channel(channel, datetime.fromtimestamp(now, UTC))
+                    checked = datetime.fromtimestamp(row["checked_at"], UTC)
+                    apply_verification(
+                        channel,
+                        VerifiedChannel(
+                            name,
+                            metadata["subscriber_count"],
+                            metadata["subscriber_display"],
+                            datetime.fromtimestamp(metadata["latest_post"], UTC),
+                            checked,
+                        ),
+                    )
                     await db.flush()
+                    await record_check(db, channel, "valid", checked)
                     db.add(
                         DiscoveredChannel(
                             telegram_id=identity,

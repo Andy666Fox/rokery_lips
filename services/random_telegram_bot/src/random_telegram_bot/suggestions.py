@@ -1,5 +1,6 @@
 """Telegram verification for user suggestions, independent of bulk discovery."""
 
+import asyncio
 import re
 import time
 from collections.abc import Awaitable, Callable
@@ -11,12 +12,11 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from random_telegram_bot.catalogue import normalize_channel
+from random_telegram_bot.messages import message
 from random_telegram_bot.models import Channel, User
+from random_telegram_bot.moderation import InvalidChannel, check_preview
 from random_telegram_bot.telegram_web import Deferred, TelegramHTTP, parse_preview
-
-
-class InvalidChannel(Exception):
-    """Telegram did not confirm a public broadcast channel."""
+from random_telegram_bot.verification_queue import record_check
 
 
 class ValidationUnavailable(Exception):
@@ -68,12 +68,12 @@ class ChannelValidator:
         ):
             raise ValidationUnavailable
         checked = datetime.now(UTC)
-        dates = [date for date in preview.dates if date <= checked.timestamp() + 86400]
+        latest = await asyncio.to_thread(check_preview, preview, checked)
         return VerifiedChannel(
             name,
             preview.subscriber_count,
             preview.subscriber_display,
-            datetime.fromtimestamp(max(dates), UTC) if dates else None,
+            latest,
             checked,
         )
 
@@ -106,27 +106,26 @@ async def accept_suggestion(
         if check is None:
             raise ValidationUnavailable
         verified = await check(username)
-    except InvalidChannel:
-        return (
-            "Не удалось подтвердить публичный канал. "
-            "Проверьте адрес и отправьте его снова. Отмена: /cancel."
-        )
+    except InvalidChannel as error:
+        canonical = await existing_channel(db, username)
+        if canonical is not None:
+            checked = datetime.now(UTC)
+            canonical.status = False
+            canonical.last_checked_at = checked.replace(tzinfo=None)
+            await record_check(db, canonical, "invalid", checked, reason=error.reason)
+        return message("moderation_rejected")
     except ValidationUnavailable:
-        return (
-            "Проверка Telegram временно недоступна. Отправьте канал ещё раз позже. Отмена: /cancel."
-        )
+        return message("validation_unavailable")
     canonical = await existing_channel(db, verified.username)
     if canonical is not None:
-        if canonical.status:
-            response = "Этот канал уже есть в каталоге."
-        else:
-            response = "Канал проверен и подтверждён в каталоге. Спасибо!"
+        response = message("channel_existing" if canonical.status else "channel_confirmed")
     else:
         canonical = Channel(channelnick=verified.username, status=True, added_at=datetime.now(UTC))
         db.add(canonical)
         user.suggested_channels += 1
-        response = "Публичный канал проверен и добавлен в каталог. Спасибо!"
+        response = message("channel_added")
     apply_verification(canonical, verified)
+    await record_check(db, canonical, "valid", verified.checked_at)
     user.awaiting_suggestion = False
     return response
 
