@@ -17,6 +17,7 @@ from random_telegram_bot.catalogue import Catalogue
 from random_telegram_bot.config import Settings
 from random_telegram_bot.handlers import prepare_actions
 from random_telegram_bot.main import create_app
+from random_telegram_bot.messages import message as bot_message
 from random_telegram_bot.models import Base, Channel, Inbox, MessageDelivery, User
 from random_telegram_bot.queue import Workers
 from random_telegram_bot.suggestions import VerifiedChannel, apply_verification
@@ -138,8 +139,10 @@ def test_admin_only(sender: int, chat_type: str, admin: int, allowed: bool) -> N
                 )
                 assert len(actions) == 1 and actions[0]["method"] == "sendMessage"
                 text = actions[0]["text"]
-                assert ("Статистика бота" in text) is allowed
-                assert ("только администратору" in text) is not allowed
+                if allowed:
+                    assert text == await info_text(db)
+                else:
+                    assert text == bot_message("admin_only")
         finally:
             await engine.dispose()
 

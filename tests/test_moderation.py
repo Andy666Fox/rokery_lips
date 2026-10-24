@@ -190,9 +190,15 @@ def test_old_confirmations_remain_until_their_queued_recheck() -> None:
     asyncio.run(scenario())
 
 
-def test_help_limits_match_the_policy() -> None:
+def test_help_limits_match_the_policy(monkeypatch: pytest.MonkeyPatch) -> None:
+    from random_telegram_bot import messages
     from random_telegram_bot.moderation import criteria_text
 
+    monkeypatch.setitem(
+        messages._templates,
+        "moderation_criteria",
+        "Age: {max_age_days}; posts: {sample_posts}; subscribers: {max_subscribers}",
+    )
     text = criteria_text()
     assert str(MAX_SUBSCRIBERS) in text
     assert "14" in text and str(TEXT_POSTS) in text
