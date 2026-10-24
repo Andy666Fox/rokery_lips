@@ -81,6 +81,10 @@ def test_accepts_supported_languages_and_inclusive_limits(text: str) -> None:
         ({"texts": [""]}, "post_text_unknown"),
         ({"texts": ["https://example.com 12345 🎉"]}, "language_unknown"),
         ({"texts": [FRENCH]}, "unsupported_or_uncertain_language"),
+        (
+            {"texts": ["这是一个中文频道，我们每天分享技术新闻以及生活中的有趣故事。"]},
+            "unsupported_or_uncertain_language",
+        ),
     ],
 )
 def test_rejects_failed_or_missing_evidence(changes: dict[str, Any], reason: str) -> None:
@@ -101,6 +105,13 @@ def test_language_uses_ten_latest_text_posts_and_ignores_foreign_widgets() -> No
 
 def test_recent_media_post_does_not_supply_language_evidence() -> None:
     preview = parse_preview(preview_html(texts=[ENGLISH, ""]), "testchannel")
+    assert check_preview(preview, NOW)
+
+
+def test_incidental_mathematical_symbols_do_not_change_english_language() -> None:
+    preview = parse_preview(
+        preview_html(texts=[ENGLISH + " Coordinates α and β are shown below."]), "testchannel"
+    )
     assert check_preview(preview, NOW)
 
 

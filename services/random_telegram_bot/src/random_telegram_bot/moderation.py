@@ -88,10 +88,13 @@ def check_text(text: str) -> None:
     letters = [letter for letter in text if letter.isalpha()]
     if not letters:
         raise InvalidChannel("language_unknown")
-    if any(
+    unsupported = sum(
         letter.lower() not in _RUSSIAN_LETTERS and "LATIN" not in unicodedata.name(letter, "")
         for letter in letters
-    ):
+    )
+    # Names and mathematical symbols do not change a post's language. A substantial
+    # unsupported script cannot be classified using our Latin/Cyrillic profiles.
+    if unsupported / len(letters) > 1 - MIN_LANGUAGE_CONFIDENCE:
         raise InvalidChannel("unsupported_or_uncertain_language")
     detector = language_factory().create()
     detector.append(text)
