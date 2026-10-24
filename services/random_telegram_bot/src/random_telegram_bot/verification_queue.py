@@ -46,6 +46,8 @@ async def enqueue_untracked(engine: AsyncEngine) -> int:
     """Keep existing approval/status untouched; add missing queue receipts idempotently."""
     channels, checks = Channel.__table__, ChannelCheck.__table__
     assert isinstance(channels, Table) and isinstance(checks, Table)
+    # MySQL must distinguish the SELECT source from the INSERT/UPDATE target.
+    queued = checks.alias("known_checks")
     columns = [
         "channel_id",
         "state",
@@ -69,8 +71,8 @@ async def enqueue_untracked(engine: AsyncEngine) -> int:
             literal(""),
             literal(SOURCE),
         )
-        .select_from(channels.outerjoin(checks, checks.c.channel_id == channels.c.channel_id))
-        .where(checks.c.channel_id.is_(None))
+        .select_from(channels.outerjoin(queued, queued.c.channel_id == channels.c.channel_id))
+        .where(queued.c.channel_id.is_(None))
     )
     if mysql:
         statement = mysql_insert(checks).from_select(columns, rows)
