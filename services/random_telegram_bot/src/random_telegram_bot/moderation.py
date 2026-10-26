@@ -66,6 +66,29 @@ def criteria_text() -> str:
     )
 
 
+def rejection_text(reason: str) -> str:
+    """Translate the first failed rule without exposing internal error codes."""
+    known_reasons = {
+        "not_public_channel",
+        "subscriber_count_unknown",
+        "too_many_subscribers",
+        "last_post_unknown",
+        "invalid_post_date",
+        "last_post_too_old",
+        "post_text_unknown",
+        "language_unknown",
+        "unsupported_or_uncertain_language",
+    }
+    key = reason if reason in known_reasons else "unknown"
+    explanation = message(
+        "moderation_reason_" + key,
+        max_age_days=MAX_AGE_DAYS,
+        max_subscribers=MAX_SUBSCRIBERS,
+        sample_posts=TEXT_POSTS,
+    )
+    return message("moderation_rejected", reason=explanation)
+
+
 def language_factory() -> DetectorFactory:
     global _factory
     with _factory_lock:

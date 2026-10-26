@@ -1,18 +1,37 @@
 """Build durable replies and apply database effects in the same transaction."""
 
+import re
 from datetime import UTC, datetime
 from typing import Any
 
-from aiogram.types import Update
+from aiogram.types import Message, Update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from random_telegram_bot.admin_info import info_text
-from random_telegram_bot.catalogue import Catalogue, normalize_channel
+from random_telegram_bot.catalogue import Catalogue
 from random_telegram_bot.messages import message as reply
 from random_telegram_bot.models import Channel, Rating, User
 from random_telegram_bot.moderation import criteria_text
 from random_telegram_bot.suggestions import CheckChannel, accept_suggestion
 from random_telegram_bot.telegram_web import public_username
+
+
+def message_addresses(message: Message) -> list[str]:
+    """Read channel links and @usernames, including media captions."""
+    text = message.text or message.caption or ""
+    entities = message.entities if message.text is not None else message.caption_entities
+    links = [
+        entity.url if entity.type == "text_link" else entity.extract_from(text)
+        for entity in entities or []
+        if entity.type in {"url", "text_link", "mention"}
+    ]
+    # Plain-text fallback also supports t.me/name without a scheme or URL entity.
+    links += re.findall(
+        r"(?i)(?<![\w@./])(?:(?:https?://|(?:t\.me|telegram\.me)/)[^\s<>]+"
+        r"|@[A-Za-z][A-Za-z0-9_]{4,31}(?!\w))",
+        text,
+    )
+    return list(dict.fromkeys(link.rstrip(".,;!)]") for link in links if link is not None))
 
 
 async def prepare_actions(
@@ -36,6 +55,8 @@ async def prepare_actions(
         db.add(user)
         await db.flush()
     user.last_online = datetime.now(UTC)
+    # Clear the legacy flag without requiring a destructive schema migration.
+    user.awaiting_suggestion = False
     if callback:
         parts = (callback.data or "").split(":")
         text = reply("rating_unknown")
@@ -96,27 +117,11 @@ async def prepare_actions(
         else:
             response = await info_text(db)
     elif command in {"/start", "/help"}:
-        user.awaiting_suggestion = False
         response = reply("start", find_button=find_button)
         if command == "/help":
             response = reply("help", criteria=criteria_text())
     elif command == "/extra":
         response = reply("extra", viewed=user.viewed_channels, suggested=user.suggested_channels)
-    elif command == "/cancel":
-        user.awaiting_suggestion = False
-        response = reply("cancel")
-    elif command == "/suggest" or user.awaiting_suggestion:
-        candidate = text.partition(" ")[2] if command == "/suggest" else text
-        if not candidate:
-            user.awaiting_suggestion = True
-            response = reply("suggest_prompt")
-        else:
-            try:
-                name = public_username(candidate) or normalize_channel(candidate)
-            except ValueError:
-                response = reply("suggest_bad_address")
-            else:
-                response = await accept_suggestion(db, user, name, check_channel)
     elif command == "/random" or text == find_button:
         chosen = await catalogue.choose()
         if chosen is None:
@@ -148,7 +153,18 @@ async def prepare_actions(
                 }
             ]
     else:
-        response = reply("unknown_command")
+        links = [] if command.startswith("/") else message_addresses(message)
+        if len(links) > 1:
+            response = reply("suggest_one_link")
+        elif links:
+            name = public_username(links[0])
+            response = (
+                await accept_suggestion(db, user, name, check_channel)
+                if name is not None
+                else reply("suggest_bad_address")
+            )
+        else:
+            response = reply("unknown_command")
     return [
         {
             "method": "sendMessage",

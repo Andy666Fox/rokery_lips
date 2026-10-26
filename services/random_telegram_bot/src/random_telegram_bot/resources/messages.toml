@@ -7,12 +7,11 @@ dislike_button = "👎"
 rating_unknown = "Что-то пошло не так"
 rating_thanks = "Принято к сведению"
 admin_only = "Ты даже не гражданин!"
-start = "Получить канал: кнопка «{find_button}».\nПредложить канал: команда /suggest.\nСправка: команда /help."
+start = "Получить канал: кнопка «{find_button}».\nПредложить канал: просто пришлите ссылку на него или @username.\nСправка: команда /help."
 help = """
 /random — найти случайный канал.
-/suggest @username — предложить публичный канал.
+Чтобы предложить публичный канал, просто пришлите ссылку https://t.me/username или @username.
 /extra — ваша статистика.
-/cancel — отменить предложение.
 
 Условия внутренней модерации:
 {criteria}
@@ -25,17 +24,26 @@ moderation_criteria = """
 При возникновении вопросов обратитесь к администратору
 """
 extra = "Просмотрено каналов: {viewed}. Предложено: {suggested}."
-cancel = "Действие отменено."
-suggest_prompt = "Отправьте @username или ссылку на канал. Отмена: /cancel."
-suggest_bad_address = "Нужна ссылка на публичный канал или @username. Отмена: /cancel."
-moderation_rejected = "Канал не прошёл внутреннюю модерацию. Условия отбора: /help. Предложите другой канал или отмените действие: /cancel."
-validation_unavailable = "Проверка Telegram временно недоступна. Отправьте канал ещё раз позже. Отмена: /cancel."
+suggest_bad_address = "Нужна ссылка на публичный канал Telegram или @username, например https://t.me/username. Закрытые приглашения и ссылки на другие сайты не подходят."
+suggest_one_link = "Отправьте ссылку или @username одного канала в одном сообщении."
+moderation_rejected = "Канал не прошёл внутреннюю модерацию. Причина: {reason}\nВсе условия отбора: /help. Можно прислать ссылку на другой канал."
+moderation_reason_not_public_channel = "Не удалось подтвердить, что это публичный канал с доступными постами. Ссылки на группы, ботов и личные профили не подходят."
+moderation_reason_subscriber_count_unknown = "Не удалось определить точное количество подписчиков. Для подтверждения их должно быть не больше {max_subscribers}."
+moderation_reason_too_many_subscribers = "В канале больше {max_subscribers} подписчиков."
+moderation_reason_last_post_unknown = "Не удалось определить дату последнего поста."
+moderation_reason_invalid_post_date = "У последнего поста некорректная дата: она находится в будущем."
+moderation_reason_last_post_too_old = "Последний пост опубликован более {max_age_days} дней назад."
+moderation_reason_post_text_unknown = "Нет доступных постов с текстом, по которым можно проверить язык канала."
+moderation_reason_language_unknown = "Не удалось определить язык постов. Для проверки нужен текст на русском или английском."
+moderation_reason_unsupported_or_uncertain_language = "При проверке последних постов с текстом (до {sample_posts}) обнаружен другой язык либо не удалось уверенно подтвердить русский или английский."
+moderation_reason_unknown = "Не удалось подтвердить соответствие канала условиям отбора."
+validation_unavailable = "Проверка Telegram временно недоступна. Пришлите ссылку или @username ещё раз позже."
 channel_existing = "Этот канал уже есть в каталоге."
 channel_confirmed = "Канал проверен и подтверждён в каталоге. Спасибо!"
 channel_added = "Публичный канал проверен и добавлен в каталог. Спасибо!"
-catalogue_empty = "Каталог пока пуст. Предложить канал: /suggest @username."
+catalogue_empty = "Каталог пока пуст. Чтобы предложить канал, просто пришлите ссылку на него или @username."
 random_channel = "Случайный канал: https://t.me/{username}"
-unknown_command = "Выдать случайный канал: /random. Справка: /help."
+unknown_command = "Выдать случайный канал: /random. Предложить канал: пришлите ссылку на него или @username. Справка: /help."
 admin_info = """
 Статистика бота
 1) Каналы: {channels} всего / {confirmed} подтверждено

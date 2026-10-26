@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from random_telegram_bot.catalogue import normalize_channel
 from random_telegram_bot.messages import message
 from random_telegram_bot.models import Channel, User
-from random_telegram_bot.moderation import InvalidChannel, check_preview
+from random_telegram_bot.moderation import InvalidChannel, check_preview, rejection_text
 from random_telegram_bot.telegram_web import Deferred, TelegramHTTP, parse_preview
 from random_telegram_bot.verification_queue import record_check
 
@@ -101,7 +101,7 @@ async def existing_channel(db: AsyncSession, username: str) -> Channel | None:
 async def accept_suggestion(
     db: AsyncSession, user: User, username: str, check: CheckChannel | None
 ) -> str:
-    user.awaiting_suggestion = True
+    user.awaiting_suggestion = False
     try:
         if check is None:
             raise ValidationUnavailable
@@ -113,7 +113,7 @@ async def accept_suggestion(
             canonical.status = False
             canonical.last_checked_at = checked.replace(tzinfo=None)
             await record_check(db, canonical, "invalid", checked, reason=error.reason)
-        return message("moderation_rejected")
+        return rejection_text(error.reason)
     except ValidationUnavailable:
         return message("validation_unavailable")
     canonical = await existing_channel(db, verified.username)

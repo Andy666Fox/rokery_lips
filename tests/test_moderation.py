@@ -149,8 +149,10 @@ def test_failed_suggestion_is_not_confirmed_and_uses_editable_message() -> None:
                 db.add(user)
                 await db.flush()
                 assert await accept_suggestion(db, user, "testchannel", reject) == message(
-                    "moderation_rejected"
+                    "moderation_rejected",
+                    reason=message("moderation_reason_too_many_subscribers", max_subscribers=1500),
                 )
+                assert not user.awaiting_suggestion
                 assert user.suggested_channels == 0
                 assert await db.scalar(select(Channel)) is None
                 channel = Channel(channelnick="testchannel", status=True)
