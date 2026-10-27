@@ -8,6 +8,7 @@ __pycache__/
 
 # Local credentials, deployment helpers, and generated artifacts.
 .local/
+.docs/
 .env.*
 !.env.example
 !.env.integration.example
