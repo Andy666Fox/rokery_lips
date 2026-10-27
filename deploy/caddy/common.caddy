@@ -4,17 +4,25 @@
 	@html path / /index.html
 	header @html Cache-Control "no-cache"
 
-	@code path *.css *.js
+	@code path *.css *.js /model-viewer.json
 	header @code Cache-Control "no-cache"
 
 	@media path *.woff2 *.ttf *.jpg *.jpeg *.png *.webp *.gif *.mp4 *.ico *.svg
 	header @media Cache-Control "public, max-age=604800"
 
-	@website not path /monitoring /monitoring/*
+	@website not path /monitoring /monitoring/* /viewer /viewer/*
 	header @website {
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; media-src 'self' https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		-Server
+	}
+	@viewer path /viewer /viewer/*
+	header @viewer {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' blob: https:; worker-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'none'; object-src 'none'"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 		-Server
 	}

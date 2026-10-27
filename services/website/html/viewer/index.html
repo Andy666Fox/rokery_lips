@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>3D-модель — Synchronisica</title>
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="viewer.css">
+	<script type="module" src="viewer.js"></script>
+</head>
+<body class="model-document">
+	<header class="model-header">
+		<div>
+			<p class="model-eyebrow">Исследуйте со всех сторон</p>
+			<h2 id="model-title">3D-модель</h2>
+		</div>
+		<div class="model-tools">
+			<button id="reset-view" type="button" disabled aria-label="Вернуть исходный ракурс" title="Исходный ракурс">↺</button>
+			<button id="fullscreen" type="button" disabled aria-label="Развернуть на весь экран" title="На весь экран">⛶</button>
+		</div>
+	</header>
+	<div class="model-stage" id="model-stage" aria-busy="true">
+		<div class="model-status" id="model-status" role="status" aria-live="polite">
+			<p id="model-status-text">Загрузка модели…</p>
+			<button id="retry-model" class="btn gh-btn" type="button" hidden>Повторить</button>
+		</div>
+	</div>
+	<footer class="model-footer">
+		<p>Вращение — перетаскивание · Приближение — колесо или щипок</p>
+		<p>Перемещение — правая кнопка мыши или два пальца</p>
+		<a id="model-credit" hidden target="_blank" rel="noopener noreferrer"></a>
+	</footer>
+	<noscript><p>Для просмотра модели включите JavaScript.</p></noscript>
+</body>
+</html>

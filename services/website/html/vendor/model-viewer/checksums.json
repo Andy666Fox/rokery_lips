@@ -1,0 +1,13 @@
+{
+  "model-viewer.min.js": "18b2e711035aa4705ee281530a55dc2338ff05eed3d70ae16d54105282a75ed5",
+  "LICENSE-model-viewer.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+  "LICENSE-three.txt": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+  "LICENSE-lit.txt": "45d31799d0db956cc3eb5469346abbd9b7025babc5ff29fab10d7095da992ef1",
+  "LICENSE-gainmap.txt": "7fb8f722609c6669a9c9a4865e2a86205c7760e7dc7a039b0fb9913c3e62c6cc",
+  "draco/draco_decoder.js": "8625489da79a805f4f2a7d511c3e52d8b4085608a9d2a4d5f4f9de5db0aea04f",
+  "draco/draco_decoder.wasm": "a680d927bed9cb864ddbd63521868891af2bfbe755092761b4837487618df8ac",
+  "draco/draco_wasm_wrapper.js": "8bb2952d2ba7d67e1414f8df819410cb0434a666be53f671fff75f68843d76f6",
+  "basis/basis_transcoder.js": "8478b5b6d6b74e7d3082b89f6417321d8d1dc0307f2b30d4484bb11b441696a1",
+  "basis/basis_transcoder.wasm": "6cf17dc889352c42e9acf8897107978d127005fe3386c36a0e3845e27967630a",
+  "meshopt_decoder.js": "a093cd50fa2e973bf450e4fa07a2690f9b484aa1191c7eba1fe7cda47bb07bf8"
+}

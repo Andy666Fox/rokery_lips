@@ -1,0 +1,11 @@
+{
+  "src": "/models/makima.glb",
+  "title": "Makima",
+  "alt": "Трёхмерная модель Макимы из Chainsaw Man в T-позе",
+  "poster": null,
+  "cameraOrbit": "85deg 80deg 105%",
+  "cameraTarget": "auto auto auto",
+  "fieldOfView": "30deg",
+  "autoRotate": false,
+  "credit": null
+}

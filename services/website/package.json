@@ -1,0 +1,17 @@
+{
+  "name": "synchronisica-website-assets",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "vendor": "node scripts/vendor-model-viewer.mjs",
+    "prepare:model": "node scripts/prepare-model.mjs"
+  },
+  "dependencies": {
+    "@google/model-viewer": "4.4.0"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "4.5.1",
+    "@gltf-transform/extensions": "4.5.1",
+    "meshoptimizer": "1.0.1"
+  }
+}
