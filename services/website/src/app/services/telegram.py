@@ -152,7 +152,8 @@ class TelegramService:
             try:
                 post = await self._fetch_post()
             except (httpx.HTTPError, TelegramResponseError, TimeoutError) as error:
-                logger.warning("telegram refresh failed: %s: %s", type(error).__name__, error)
+                # Exception text from HTTP clients may contain the proxy URL with credentials.
+                logger.warning("telegram refresh failed: %s", type(error).__name__)
                 now = self._clock()
                 self._retry_after = now + self._cache_ttl
                 try:
