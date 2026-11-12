@@ -50,6 +50,7 @@ async function loadModel() {
 		const target = config.cameraTarget || 'auto auto auto';
 		const fieldOfView = config.fieldOfView || '30deg';
 		viewer.id = 'model-viewer';
+		viewer.className = 'block h-full w-full';
 		viewer.alt = config.alt;
 		viewer.setAttribute('camera-controls', '');
 		viewer.setAttribute('touch-action', 'pan-y');

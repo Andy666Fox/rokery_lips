@@ -1,0 +1,97 @@
+/* Source for html/styles.css. Rebuild with `npm run build:css` from services/website. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	@font-face {
+		font-family: 'Dragonic';
+		src: url('./dragon_alphabet.woff2') format('woff2'),
+			url('./dragon_alphabet.ttf') format('truetype');
+		font-display: swap;
+	}
+
+	:root {
+		color-scheme: dark;
+		/* Preflight sets 1.5; the design was built on the browser default. */
+		line-height: normal;
+	}
+
+	/* Components set display (e.g. .btn is inline-flex); `hidden` must still win. */
+	[hidden] {
+		display: none !important;
+	}
+
+	body {
+		@apply antialiased;
+	}
+
+	:focus-visible {
+		outline: 3px solid theme('colors.accent.DEFAULT');
+		outline-offset: 3px;
+	}
+}
+
+@layer components {
+	/* Shared button shape; colour comes from btn-primary / btn-secondary. */
+	.btn {
+		@apply inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-[.7rem] text-[.9rem] font-semibold no-underline transition-[transform,background-color,box-shadow,border-color] duration-150 ease-in-out hover:-translate-y-px active:translate-y-0 disabled:cursor-wait disabled:opacity-60 disabled:hover:translate-y-0;
+	}
+	.btn svg {
+		@apply h-[18px] w-[18px] shrink-0;
+	}
+	.btn-primary {
+		@apply bg-accent text-paper-light shadow-btn hover:bg-accent-dark hover:shadow-btn-hover;
+	}
+	.btn-secondary {
+		@apply border border-accent-dark/70 bg-accent/[.06] text-accent-dark hover:border-accent-dark hover:bg-accent/[.14];
+	}
+
+	/* Glass panel used by the side columns. Blur is skipped on narrow and touch screens. */
+	.panel {
+		@apply rounded-xl border border-[#d4b6a0]/50 bg-paper/[.88] p-4 shadow-soft md:shadow-panel md:backdrop-blur-[10px] md:backdrop-saturate-[.75] touch:shadow-soft touch:backdrop-blur-none touch:backdrop-saturate-100;
+	}
+	.side-heading {
+		@apply m-0 mb-[.9rem] font-display text-[.95rem] font-semibold tracking-[.03em] text-accent-dark;
+	}
+	.side-status {
+		@apply m-0 px-2 py-5 text-center text-[.85rem] leading-normal text-muted;
+	}
+
+	/* Muted photo treatment shared by the stage background and post media. */
+	.photo-filter {
+		@apply md:saturate-[.72] md:sepia-[.08] md:contrast-[.94] touch:filter-none;
+	}
+
+	/* Endless credits scroller driven by app.js (--scroll-distance / --scroll-duration). */
+	.credits-viewport {
+		mask-image: linear-gradient(to bottom, transparent, black 8%, black 92%, transparent);
+	}
+	.credits-track.is-scrolling {
+		will-change: transform;
+		animation: scroll-up var(--scroll-duration) linear infinite;
+	}
+	.credits:hover .credits-track,
+	.credits:focus-within .credits-track {
+		animation-play-state: paused;
+	}
+	.credits:focus-within .credits-viewport {
+		overflow-y: auto;
+		mask-image: none;
+	}
+
+	@media (prefers-reduced-motion: reduce), (hover: none) {
+		.credits-viewport { overflow-y: auto; mask-image: none; }
+		.credits-track.is-scrolling { animation: none; will-change: auto; }
+		.credits-list-clone { display: none; }
+	}
+}
+
+@keyframes scroll-up {
+	from { transform: translateY(0); }
+	to { transform: translateY(calc(-1 * var(--scroll-distance))); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*, *::before, *::after { transition: none !important; }
+}

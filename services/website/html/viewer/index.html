@@ -5,31 +5,30 @@
 	<meta name="viewport" content="width=device-width,initial-scale=1">
 	<title>3D-модель — Synchronisica</title>
 	<link rel="stylesheet" href="../styles.css">
-	<link rel="stylesheet" href="viewer.css">
 	<script type="module" src="viewer.js"></script>
 </head>
-<body class="model-document">
-	<header class="model-header">
+<body class="flex h-svh min-h-svh flex-col overflow-hidden bg-paper font-sans text-ink antialiased">
+	<header class="flex items-center justify-between gap-3 px-[1.15rem] pb-3 pt-[1.1rem]">
 		<div>
-			<p class="model-eyebrow">Исследуйте со всех сторон</p>
-			<h2 id="model-title">3D-модель</h2>
+			<p class="mb-[.35rem] text-[.65rem] uppercase tracking-[.08em] text-muted">Исследуйте со всех сторон</p>
+			<h2 id="model-title" class="text-[1.05rem] font-semibold [overflow-wrap:anywhere]">3D-модель</h2>
 		</div>
-		<div class="model-tools">
-			<button id="reset-view" type="button" disabled aria-label="Вернуть исходный ракурс" title="Исходный ракурс">↺</button>
-			<button id="fullscreen" type="button" disabled aria-label="Развернуть на весь экран" title="На весь экран">⛶</button>
+		<div class="flex shrink-0 gap-[.35rem]">
+			<button id="reset-view" class="h-11 w-11 cursor-pointer rounded-lg border border-accent-dark/30 bg-paper-light text-[1.45rem] text-accent-dark enabled:hover:bg-paper-hover disabled:cursor-default disabled:opacity-40" type="button" disabled aria-label="Вернуть исходный ракурс" title="Исходный ракурс">↺</button>
+			<button id="fullscreen" class="h-11 w-11 cursor-pointer rounded-lg border border-accent-dark/30 bg-paper-light text-[1.45rem] text-accent-dark enabled:hover:bg-paper-hover disabled:cursor-default disabled:opacity-40" type="button" disabled aria-label="Развернуть на весь экран" title="На весь экран">⛶</button>
 		</div>
 	</header>
-	<div class="model-stage" id="model-stage" aria-busy="true">
-		<div class="model-status" id="model-status" role="status" aria-live="polite">
-			<p id="model-status-text">Загрузка модели…</p>
-			<button id="retry-model" class="btn gh-btn" type="button" hidden>Повторить</button>
+	<div class="relative min-h-0 flex-1 bg-[radial-gradient(ellipse_at_50%_45%,theme(colors.paper.light),theme(colors.paper.deep))]" id="model-stage" aria-busy="true">
+		<div class="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-3 bg-paper/[.88] p-6 text-center text-[.9rem]" id="model-status" role="status" aria-live="polite">
+			<p id="model-status-text" class="max-w-[30em] leading-normal">Загрузка модели…</p>
+			<button id="retry-model" class="btn btn-secondary" type="button" hidden>Повторить</button>
 		</div>
 	</div>
-	<footer class="model-footer">
-		<p>Вращение — перетаскивание · Приближение — колесо или щипок</p>
-		<p>Перемещение — правая кнопка мыши или два пальца</p>
-		<a id="model-credit" hidden target="_blank" rel="noopener noreferrer"></a>
+	<footer class="px-4 pb-4 pt-3 text-center text-muted">
+		<p class="my-[.2rem] text-[.7rem] leading-[1.45]">Вращение — перетаскивание · Приближение — колесо или щипок</p>
+		<p class="my-[.2rem] text-[.7rem] leading-[1.45]">Перемещение — правая кнопка мыши или два пальца</p>
+		<a id="model-credit" class="mt-[.3rem] inline-block text-[.7rem] underline" hidden target="_blank" rel="noopener noreferrer"></a>
 	</footer>
-	<noscript><p>Для просмотра модели включите JavaScript.</p></noscript>
+	<noscript><p class="p-4 text-center">Для просмотра модели включите JavaScript.</p></noscript>
 </body>
 </html>

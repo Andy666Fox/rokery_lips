@@ -1,5 +1,6 @@
 const REQUEST_TIMEOUT_MS = 8000;
 const CREDIT_SCROLL_DURATION_SECONDS = 60;
+const POST_MEDIA_CLASSES = 'photo-filter mb-3 block aspect-[4/3] h-auto max-h-[260px] w-full shrink-0 rounded-[7px] object-cover';
 
 async function fetchJson(url) {
 	const controller = new AbortController();
@@ -25,6 +26,7 @@ function statusElement(message) {
 
 function createPostImage(url) {
 	const image = document.createElement('img');
+	image.className = POST_MEDIA_CLASSES;
 	image.src = url;
 	image.alt = 'Изображение из последней публикации Synchronisica';
 	image.loading = 'lazy';
@@ -41,7 +43,7 @@ async function loadTelegramPost() {
 	try {
 		const post = await fetchJson('/api/telegram/latest');
 		const content = document.createElement(post.link ? 'a' : 'article');
-		content.className = 'tg-post-link';
+		content.className = 'group flex h-full min-h-0 flex-col overflow-hidden';
 
 		if (post.link) {
 			content.href = post.link;
@@ -52,6 +54,7 @@ async function loadTelegramPost() {
 
 		if (post.video) {
 			const video = document.createElement('video');
+			video.className = POST_MEDIA_CLASSES;
 			video.muted = true;
 			video.defaultMuted = true;
 			video.autoplay = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -72,7 +75,7 @@ async function loadTelegramPost() {
 
 		if (post.text) {
 			const text = document.createElement('p');
-			text.className = 'tg-post-text';
+			text.className = 'line-clamp-[8] min-h-0 shrink whitespace-pre-wrap text-base leading-[1.55] text-ink transition-colors duration-150 [overflow-wrap:anywhere] group-hover:text-accent-dark sm:text-[.86rem]';
 			text.textContent = post.text;
 			content.append(text);
 		}
@@ -81,7 +84,7 @@ async function loadTelegramPost() {
 			const date = new Date(post.date);
 			if (!Number.isNaN(date.getTime())) {
 				const time = document.createElement('time');
-				time.className = 'tg-post-meta';
+				time.className = 'mt-3 block shrink-0 text-[.875rem] text-muted sm:text-[.76rem]';
 				time.dateTime = post.date;
 				time.textContent = date.toLocaleString('ru-RU');
 				content.append(time);
@@ -98,18 +101,18 @@ async function loadTelegramPost() {
 
 function createCreditsList(rows) {
 	const list = document.createElement('ul');
-	list.className = 'credits-list';
+	list.className = 'flex shrink-0 flex-col gap-[1.1rem] px-1 py-2';
 
 	for (const row of rows) {
 		const item = document.createElement('li');
-		item.className = 'credit';
+		item.className = 'text-center text-base leading-[1.4] [overflow-wrap:anywhere] sm:text-[.85rem]';
 
 		const title = document.createElement('cite');
-		title.className = 'credit-title';
+		title.className = 'block font-semibold not-italic tracking-[.01em] text-ink';
 		title.textContent = row.title;
 
 		const artist = document.createElement('span');
-		artist.className = 'credit-artist';
+		artist.className = 'mt-[.15rem] block text-[.875rem] text-muted sm:text-[.8rem]';
 		artist.textContent = row.artist;
 
 		item.append(title, artist);
@@ -187,6 +190,7 @@ randomButton?.addEventListener('click', async () => {
 		const data = await response.json();
 		if (!/^[a-z][a-z0-9_]{4,31}$/i.test(data.channel?.username)) throw new Error('Invalid channel');
 		const link = document.createElement('a');
+		link.className = 'underline underline-offset-[.2em]';
 		link.href = `https://t.me/${data.channel.username}`;
 		link.target = '_blank';
 		link.rel = 'noopener noreferrer';

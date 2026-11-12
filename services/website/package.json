@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "vendor": "node scripts/vendor-model-viewer.mjs",
-    "prepare:model": "node scripts/prepare-model.mjs"
+    "prepare:model": "node scripts/prepare-model.mjs",
+    "build:css": "tailwindcss -c tailwind.config.js -i styles/tailwind.css -o html/styles.css --minify"
   },
   "dependencies": {
     "@google/model-viewer": "4.4.0"
@@ -12,6 +13,7 @@
   "devDependencies": {
     "@gltf-transform/core": "4.5.1",
     "@gltf-transform/extensions": "4.5.1",
-    "meshoptimizer": "1.0.1"
+    "meshoptimizer": "1.0.1",
+    "tailwindcss": "3.4.17"
   }
 }
