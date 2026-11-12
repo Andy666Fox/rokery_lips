@@ -1,6 +1,6 @@
 /** Tailwind build for the static site. Output: html/styles.css (committed, served by Caddy). */
 export default {
-	content: ['./html/**/*.{html,js}', '!./html/vendor/**'],
+	content: ['./html/**/*.{html,js}', '!./html/vendor/**', '!./html/pinball/**'],
 	theme: {
 		extend: {
 			colors: {

@@ -10,7 +10,7 @@
 	@media path *.woff2 *.ttf *.jpg *.jpeg *.png *.webp *.gif *.mp4 *.ico *.svg
 	header @media Cache-Control "public, max-age=604800"
 
-	@website not path /monitoring /monitoring/* /viewer /viewer/*
+	@website not path /monitoring /monitoring/* /viewer /viewer/* /pinball /pinball/*
 	header @website {
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
@@ -24,6 +24,18 @@
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' blob: https:; worker-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'none'; object-src 'none'"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		-Server
+	}
+
+	# Godot web export (single-threaded build, so no COOP/COEP needed).
+	# Its generated index.html carries an inline bootstrap script and styles.
+	@pinball path /pinball /pinball/*
+	header @pinball {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'none'; object-src 'none'"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		Cache-Control "no-cache"
 		-Server
 	}
 

@@ -202,3 +202,17 @@ randomButton?.addEventListener('click', async () => {
 		randomButton.disabled = false;
 	}
 });
+
+const pinballButton = document.getElementById('pinball-button');
+pinballButton?.addEventListener('click', () => {
+	const frame = document.getElementById('pinball-frame');
+	if (!frame) return;
+	// The game is ~40 MB, so it is only requested after an explicit click.
+	const game = document.createElement('iframe');
+	game.className = 'absolute inset-0 block h-full w-full border-0';
+	game.src = '/pinball/';
+	game.title = 'Пинбол';
+	game.allow = 'fullscreen; autoplay';
+	game.addEventListener('load', () => game.focus(), { once: true });
+	frame.replaceChildren(game);
+}, { once: true });
