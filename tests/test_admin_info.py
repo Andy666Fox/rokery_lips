@@ -19,7 +19,7 @@ from random_telegram_bot.handlers import prepare_actions
 from random_telegram_bot.main import create_app
 from random_telegram_bot.messages import message as bot_message
 from random_telegram_bot.models import Base, Channel, Inbox, MessageDelivery, User
-from random_telegram_bot.queue import Workers
+from random_telegram_bot.queue import Workers, claim
 from random_telegram_bot.suggestions import VerifiedChannel, apply_verification
 from sqlalchemy import func, insert, select
 from sqlalchemy import text as sql_text
@@ -186,13 +186,17 @@ def test_delivery_success_failure_and_callbacks() -> None:
                     )
                 )
             workers = Workers(sessions, Catalogue(sessions), send, admin_telegram_id=42)
+            first = await claim(sessions)
+            assert first is not None
             with pytest.raises(RuntimeError, match="Temporary send failure"):
-                await workers.process(1)
+                await workers.process(first)
             async with sessions() as db:
                 assert await db.scalar(select(func.count()).select_from(MessageDelivery)) == 0
             fail = False
-            await workers.process(1)
-            await workers.process(2)
+            await workers.process(first)
+            second = await claim(sessions)
+            assert second is not None
+            await workers.process(second)
             async with sessions() as db:
                 assert await db.scalar(select(func.count()).select_from(MessageDelivery)) == 1
             assert "Статистика бота" in sent[0]["text"]

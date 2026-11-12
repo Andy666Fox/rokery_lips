@@ -10,6 +10,7 @@ import logging
 import time
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
+from dataclasses import dataclass
 from typing import Any
 
 from aiogram import Bot
@@ -26,9 +27,26 @@ from random_telegram_bot.models import Inbox, MessageDelivery
 from random_telegram_bot.suggestions import CheckChannel
 
 logger = logging.getLogger(__name__)
+LEASE_SECONDS = 120.0
 
 
-async def claim(sessions: async_sessionmaker[AsyncSession]) -> int | None:
+@dataclass(frozen=True, slots=True)
+class Lease:
+    sequence: int
+    attempt: int
+    expires_at: float
+
+
+class LeaseLost(Exception):
+    """This attempt can no longer change the inbox entry or begin another send."""
+
+
+def _owns(row: Inbox | None, lease: Lease) -> bool:
+    # attempts increases under the claim lock, so it also fences earlier workers.
+    return row is not None and row.state == "processing" and row.attempts == lease.attempt
+
+
+async def claim(sessions: async_sessionmaker[AsyncSession]) -> Lease | None:
     now = time.time()
     earlier = aliased(Inbox)
     async with sessions.begin() as db:
@@ -53,9 +71,9 @@ async def claim(sessions: async_sessionmaker[AsyncSession]) -> int | None:
         if row is None:
             return None
         row.state = "processing"
-        row.lease_until = now + 120
+        row.lease_until = now + LEASE_SECONDS
         row.attempts += 1
-        return row.sequence
+        return Lease(row.sequence, row.attempts, row.lease_until)
 
 
 async def deliver(bot: Bot, action: dict[str, Any]) -> None:
@@ -115,11 +133,33 @@ class Workers:
             task.cancel()
         await asyncio.gather(*self.tasks, return_exceptions=True)
 
-    async def process(self, sequence: int) -> None:
+    async def _locked_row(self, db: AsyncSession, lease: Lease) -> Inbox:
+        row = await db.get(Inbox, lease.sequence, with_for_update=True)
+        if not _owns(row, lease) or row is None or row.lease_until <= time.time():
+            raise LeaseLost
+        return row
+
+    async def process(self, lease: Lease) -> bool:
+        """Stop processing at expiry; a stale claim never changes the current attempt.
+
+        Cancellation cannot retract a request already accepted by Telegram, so
+        delivery remains at-least-once. Senders must cooperate with cancellation.
+        """
+        remaining = lease.expires_at - time.time()
+        if remaining <= 0:
+            return False
+        try:
+            async with asyncio.timeout(remaining):
+                await self._process(lease)
+        except LeaseLost:
+            logger.debug("Skipped stale webhook attempt: sequence=%s", lease.sequence)
+            return False
+        return True
+
+    async def _process(self, lease: Lease) -> None:
         # A persisted action list doubles as the receipt for all business effects.
         async with self.sessions.begin() as db:
-            row = await db.get(Inbox, sequence, with_for_update=True)
-            assert row is not None
+            row = await self._locked_row(db, lease)
             if row.actions is None:
                 row.actions = await prepare_actions(
                     Update.model_validate(row.payload),
@@ -131,23 +171,26 @@ class Workers:
             assert row.actions is not None
             actions = list(row.actions)
         for action in actions:
+            async with self.sessions.begin() as db:
+                await self._locked_row(db, lease)
             await self.sender(action)
             if action["method"] == "sendMessage":
                 # Record only successful sends, including actual repeats after a retry.
                 async with self.sessions.begin() as db:
                     db.add(MessageDelivery())
         async with self.sessions.begin() as db:
-            row = await db.get(Inbox, sequence, with_for_update=True)
-            assert row is not None
+            row = await self._locked_row(db, lease)
             row.state = "done"
             row.completed_at = time.time()
             row.lease_until = 0
             row.last_error = None
 
-    async def retry(self, sequence: int, error: Exception) -> None:
+    async def retry(self, lease: Lease, error: Exception) -> None:
         async with self.sessions.begin() as db:
-            row = await db.get(Inbox, sequence, with_for_update=True)
-            assert row is not None
+            row = await db.get(Inbox, lease.sequence, with_for_update=True)
+            # An expired attempt may release itself only until another claim wins.
+            if not _owns(row, lease) or row is None:
+                return
             permanent = isinstance(error, (TelegramForbiddenError, TelegramBadRequest))
             row.state = "dead" if permanent or row.attempts >= 8 else "pending"
             delay = min(60, 2**row.attempts)
@@ -158,7 +201,7 @@ class Workers:
             # Exception strings from HTTP clients may contain credentials or payloads.
             row.last_error = type(error).__name__
         logger.warning(
-            "Webhook delivery failed: sequence=%s error=%s", sequence, type(error).__name__
+            "Webhook delivery failed: sequence=%s error=%s", lease.sequence, type(error).__name__
         )
 
     async def run(self) -> None:
@@ -166,12 +209,12 @@ class Workers:
         while True:
             try:
                 self.wake.clear()
-                sequence = await claim(self.sessions)
-                if sequence is not None:
+                lease = await claim(self.sessions)
+                if lease is not None:
                     try:
-                        await self.process(sequence)
+                        await self.process(lease)
                     except Exception as error:
-                        await self.retry(sequence, error)
+                        await self.retry(lease, error)
                     continue
                 if time.monotonic() >= next_cleanup:
                     async with self.sessions.begin() as db:
