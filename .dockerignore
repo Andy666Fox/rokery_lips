@@ -7,3 +7,6 @@ services/**/__pycache__/
 services/**/*.pyc
 services/**/.env*
 services/**/tests/
+# Static site assets are served by Caddy from the host checkout, not from images.
+services/**/node_modules/
+services/website/html/pinball/
