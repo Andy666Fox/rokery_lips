@@ -215,13 +215,19 @@ async def verify_batch(
                 channel = await db.get(Channel, identifier)
                 if channel is None:
                     raise RuntimeError("Queue references a missing channel")
-                name = normalize_channel(channel.channelnick)
+                nick = channel.channelnick
             outcome = "valid"
             stop = False
             retry_after = RECHECK_SECONDS
             rejection_reason = None
             verified = None
             try:
+                # Legacy/imported rows may hold names that are not valid usernames;
+                # reject that one row instead of aborting the whole batch.
+                try:
+                    name = normalize_channel(nick)
+                except ValueError:
+                    raise InvalidChannel("malformed_username") from None
                 verified = await check(name)
             except InvalidChannel as error:
                 outcome = "invalid"
