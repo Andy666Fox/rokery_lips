@@ -10,6 +10,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
+    Double,
     Float,
     ForeignKey,
     Index,
@@ -20,6 +21,8 @@ from sqlalchemy import (
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 ID = BigInteger().with_variant(Integer, "sqlite")
+# UTC Unix seconds require double precision; MySQL FLOAT rounds modern epochs by minutes.
+EPOCH = Double()
 
 
 class Base(DeclarativeBase):
@@ -89,7 +92,7 @@ class ChannelCheck(Base):
         "Mapped[int]", mapped_column(ID, ForeignKey("channels.channel_id"), primary_key=True)
     )
     state: Mapped[str] = cast("Mapped[str]", mapped_column(String(16), default="pending"))
-    next_check_at: Mapped[float] = cast("Mapped[float]", mapped_column(Float, default=0))
+    next_check_at: Mapped[float] = cast("Mapped[float]", mapped_column(EPOCH, default=0))
     queue_order: Mapped[int] = cast(
         "Mapped[int]",
         mapped_column(BigInteger, default=lambda: secrets.randbits(53), server_default="0"),
@@ -104,7 +107,7 @@ class ChannelCheck(Base):
 class VerificationControl(Base):
     __tablename__ = "verification_control"
     name: Mapped[str] = cast("Mapped[str]", mapped_column(String(32), primary_key=True))
-    not_before: Mapped[float] = cast("Mapped[float]", mapped_column(Float, default=0))
+    not_before: Mapped[float] = cast("Mapped[float]", mapped_column(EPOCH, default=0))
 
 
 class DiscoveredChannel(Base):
@@ -119,7 +122,7 @@ class DiscoveredChannel(Base):
     sources: Mapped[list[dict[str, object]]] = cast(
         "Mapped[list[dict[str, object]]]", mapped_column(JSON)
     )
-    verified_at: Mapped[float] = cast("Mapped[float]", mapped_column(Float))
+    verified_at: Mapped[float] = cast("Mapped[float]", mapped_column(EPOCH))
     identity_source: Mapped[str] = cast("Mapped[str]", mapped_column(String(32)))
 
 
@@ -136,17 +139,17 @@ class Inbox(Base):
     chat_id: Mapped[int] = cast("Mapped[int]", mapped_column(BigInteger))
     payload: Mapped[dict[str, object]] = cast("Mapped[dict[str, object]]", mapped_column(JSON))
     received_at: Mapped[float] = cast(
-        "Mapped[float]", mapped_column(Float, default=time.time, index=True)
+        "Mapped[float]", mapped_column(EPOCH, default=time.time, index=True)
     )
     state: Mapped[str] = cast("Mapped[str]", mapped_column(String(16), default="pending"))
     attempts: Mapped[int] = cast("Mapped[int]", mapped_column(default=0))
-    next_attempt_at: Mapped[float] = cast("Mapped[float]", mapped_column(Float, default=0))
-    lease_until: Mapped[float] = cast("Mapped[float]", mapped_column(Float, default=0))
+    next_attempt_at: Mapped[float] = cast("Mapped[float]", mapped_column(EPOCH, default=0))
+    lease_until: Mapped[float] = cast("Mapped[float]", mapped_column(EPOCH, default=0))
     actions: Mapped[list[dict[str, object]] | None] = cast(
         "Mapped[list[dict[str, object]] | None]", mapped_column(JSON, nullable=True)
     )
     completed_at: Mapped[float | None] = cast(
-        "Mapped[float | None]", mapped_column(Float, nullable=True)
+        "Mapped[float | None]", mapped_column(EPOCH, nullable=True)
     )
     last_error: Mapped[str | None] = cast("Mapped[str | None]", mapped_column(Text, nullable=True))
 
@@ -164,5 +167,5 @@ class MessageDelivery(Base):
     __tablename__ = "message_deliveries"
     id: Mapped[int] = cast("Mapped[int]", mapped_column(ID, primary_key=True, autoincrement=True))
     delivered_at: Mapped[float] = cast(
-        "Mapped[float]", mapped_column(Float, default=time.time, index=True)
+        "Mapped[float]", mapped_column(EPOCH, default=time.time, index=True)
     )
