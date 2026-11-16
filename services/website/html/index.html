@@ -37,10 +37,13 @@
 		<span class="font-dragonic text-base leading-[1.1] opacity-80 [word-spacing:.5em] sm:text-[20px]" aria-hidden="true">Homo seu gladius est aut offisiis fungitur aut hebes est</span>
 	</header>
 
-	<main id="main" tabindex="-1" class="mx-auto grid w-full max-w-[480px] flex-1 grid-cols-1 items-center gap-[clamp(1rem,2vw,2rem)] p-4 sm:max-w-[760px] sm:p-6 md:max-w-[1120px] xl:max-w-page xl:grid-cols-[minmax(300px,.8fr)_minmax(720px,1.6fr)]">
+	<main id="main" tabindex="-1" class="mx-auto grid w-full max-w-[480px] flex-1 grid-cols-1 items-center gap-[clamp(1rem,2vw,2rem)] p-4 sm:max-w-[760px] sm:p-6 md:max-w-[1120px]">
+		<!-- 3D viewer temporarily disabled; to restore, uncomment the section below and add back to <main>: xl:max-w-page xl:grid-cols-[minmax(300px,.8fr)_minmax(720px,1.6fr)] -->
+		<!--
 		<section class="model-panel h-[420px] w-full min-w-0 max-w-[760px] justify-self-center overflow-hidden rounded-[14px] border border-[#d4b6a0]/50 bg-paper shadow-panel sm:h-[480px] xl:h-[560px] xl:max-w-none xl:justify-self-stretch" aria-label="Просмотр 3D-модели">
 			<iframe class="block h-full w-full border-0" src="viewer/" title="Интерактивная 3D-модель" loading="lazy" allow="fullscreen" allowfullscreen></iframe>
 		</section>
+		-->
 		<div class="site-content grid w-full min-w-0 max-w-[1120px] grid-cols-1 items-center justify-center justify-self-end gap-6 [grid-template-areas:'stage'_'post'_'credits'] sm:max-w-[760px] sm:grid-cols-2 sm:[grid-template-areas:'stage_stage'_'post_credits'] md:max-w-[1120px] md:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_minmax(0,1fr)] md:gap-[clamp(1rem,2vw,2rem)] md:[grid-template-areas:'post_stage_credits']">
 		<section class="relative mx-auto grid min-h-[460px] w-full min-w-0 max-w-[418px] items-center overflow-hidden rounded-[14px] border border-paper/[.24] shadow-soft-lg [grid-area:stage] sm:min-h-[560px] md:shadow-stage touch:shadow-soft-lg" aria-labelledby="page-title">
 			<img class="photo-filter absolute inset-0 block h-full w-full object-cover" src="bg.jpg" alt="" fetchpriority="high" decoding="async">
@@ -101,7 +104,7 @@
 			</div>
 		</section>
 	</main>
-	<noscript><p class="p-4 text-center text-paper">Для просмотра 3D-модели, публикации и списка музыки включите JavaScript. Ссылки на канал и GitHub доступны выше.</p></noscript>
+	<noscript><p class="p-4 text-center text-paper">Для просмотра публикации и списка музыки включите JavaScript. Ссылки на канал и GitHub доступны выше.</p></noscript>
 
 	<footer class="flex items-center justify-center border-t border-paper/[.18] px-6 py-4 text-[.85rem] tracking-[.01em] text-paper/[.68]">
 		<span>&copy; 2026 GoDoVoReZ Inc.</span>
